@@ -1,6 +1,9 @@
 package com.example.tsumaps.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,10 +20,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.example.tsumaps.R
 import com.example.tsumaps.ui.theme.TsuBlue
 
 
@@ -42,7 +54,9 @@ fun MainScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFDEE5ED))
-        ) {/* ВОТ СЮДА НУЖНО ЗАПИХНУТЬ КАРТУ*/}
+        ) {/* ВОТ СЮДА НУЖНО ЗАПИХНУТЬ КАРТУ*/
+            TsuMapScreen()
+        }
 
         Column(
             modifier = Modifier
@@ -146,6 +160,39 @@ fun FloatingWhiteButton(name: String, onClick: () -> Unit){
         Text(
             text = name,
             modifier = Modifier.padding(horizontal = 5.dp, vertical = 5.dp)
+        )
+    }
+}
+
+@Composable
+fun TsuMapScreen(modifier: Modifier = Modifier) {
+    //для зума (пока не робит)
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+
+    val state = rememberTransformableState { zoomChange, offsetChange, _ ->
+        scale *= zoomChange
+        offset += offsetChange
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .transformable(state = state),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.tsu_map),
+            contentDescription = "Карта ТГУ",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer(
+                    scaleX = maxOf(1f, scale),
+                    scaleY = maxOf(1f, scale),
+                    translationX = offset.x,
+                    translationY = offset.y
+                )
         )
     }
 }
