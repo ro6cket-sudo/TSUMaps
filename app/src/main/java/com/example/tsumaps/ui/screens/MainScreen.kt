@@ -4,11 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -26,17 +31,26 @@ fun MainScreen() {
 
     BottomSheetScaffold(
         scaffoldState = sheetState,
+//        sheetDragHandle = null,
         sheetContent = {BottomSheetContent()},
-        sheetPeekHeight = 160.dp,
-        sheetShape = RoundedCornerShape(topStart = 50.dp, topEnd = 50.dp),
-        sheetShadowElevation = 40.dp,
+        sheetPeekHeight = 50.dp,
+        sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        sheetShadowElevation = 20.dp,
         sheetContainerColor = Color.White
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFDEE5ED))
+        ) {/* ВОТ СЮДА НУЖНО ЗАПИХНУТЬ КАРТУ*/}
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(top = 5.dp)
         ) {
+            CategoryFilters()
         }
     }
 }
@@ -82,5 +96,56 @@ fun ActionButton(
         )
     ) {
         Text(text)
+    }
+}
+
+@Composable
+fun CategoryFilters(){
+    val categories = listOf(
+        "Где поесть",
+        "Коворкинги"
+    )
+
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ){
+        LazyRow(
+            modifier = Modifier,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp)
+        ){
+        items(categories) { name ->
+            FloatingWhiteButton(name, {})
+        }
+        }
+    }
+}
+
+@Composable
+fun FloatingWhiteButton(name: String, onClick: () -> Unit){
+//    FloatingActionButton(
+//        onClick = onClick,
+//        containerColor = Color.White,
+//        contentColor = TsuBlue,
+//        shape = CircleShape
+//    ) {
+//        Text(
+//            text = name,
+//            modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp)
+//        )
+//    }
+    ElevatedButton(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.White,
+            contentColor = TsuBlue,
+        ),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Text(
+            text = name,
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 5.dp)
+        )
     }
 }
