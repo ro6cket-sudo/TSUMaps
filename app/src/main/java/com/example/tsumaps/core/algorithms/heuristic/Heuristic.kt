@@ -1,5 +1,7 @@
 package com.example.tsumaps.core.algorithms.heuristic
 
+import com.example.tsumaps.core.Point
+
 interface Heuristic {
-    fun calc(x1: Int, y1: Int, x2: Int, y2: Int): Int
+    fun calc(from: Point, to: Point): Int
 }

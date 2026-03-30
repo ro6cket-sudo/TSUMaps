@@ -1,93 +1,222 @@
 package com.example.tsumaps.core.algorithms
 
 import com.example.tsumaps.core.MapConstants
+import com.example.tsumaps.core.Point
 import com.example.tsumaps.core.algorithms.heuristic.ChebyshevHeuristic
 import com.example.tsumaps.core.algorithms.heuristic.Heuristic
+import com.example.tsumaps.core.algorithms.heuristic.OctileHeuristic
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
 import java.util.PriorityQueue
 
-class ASrarFinder (
+
+sealed class PathfindingEvent {
+    data class NodeClosed(val point: Point) : PathfindingEvent()
+    data class NodesOpened(val points: List<Point>) : PathfindingEvent()
+    data class PathFound(val path: List<Point>?) : PathfindingEvent()
+}
+
+interface PathFinder {
+    fun setBaseMap(walkableMap: BooleanArray)
+    fun setObstacles(obstacles: List<Point>)
+    fun clearDynamicObstacles()
+    fun findPath(start: Point, end: Point) : List<Point>?
+    fun findPathAnimated(start: Point, end: Point, delayMs: Long = 50L) : Flow<PathfindingEvent>
+}
+
+
+class AStarFinder (
     private val width: Int = MapConstants.GRID_WIDTH,
     private val height: Int = MapConstants.GRID_HEIGHT,
-    private val heuristic: Heuristic = ChebyshevHeuristic()
-) {
-    private val walkableGrid = Array(width) { BooleanArray(height) { true } }
+    private val size: Int = width * height,
+    private val heuristic: Heuristic = OctileHeuristic()
+) : PathFinder {
+    private var baseGrid = BooleanArray(size) { true }
+    private val walkableGrid = BooleanArray(size) { true }
+    private val gCost = IntArray(size) { Int.MAX_VALUE }
+    private val parents = IntArray(size) { -1 }
+    private val nodeState = IntArray(size)
+    private var iteration = 1
 
-    fun setObstacles(obstacleCoords: List<Pair<Int, Int>>) {
-        obstacleCoords.forEach{ (x, y) ->
-            if (isValid(x, y)) walkableGrid[x][y] = false
+    override fun setBaseMap(walkableMap: BooleanArray) {
+        this.baseGrid = walkableMap
+        System.arraycopy(baseGrid, 0, walkableGrid, 0, baseGrid.size)
+    }
+
+    override fun setObstacles(obstacles: List<Point>) {
+        obstacles.forEach{ point ->
+            if (isValid(point)) walkableGrid[point.y * width + point.x] = false
         }
     }
 
-    fun findPath(startX: Int, startY: Int, endX: Int, endY: Int) : List<Pair<Int, Int>>? {
-        if (!isValid(startX, startY) || !isValid(endX, endY)) return null
-        if (!walkableGrid[startX][startY] || !walkableGrid[endX][endY]) return null
+    override fun clearDynamicObstacles() {
+        System.arraycopy(baseGrid, 0, walkableGrid, 0, baseGrid.size)
+    }
 
-        val openSet = PriorityQueue<Node>(compareBy { it.fCost })
+    override fun findPath(start: Point, end: Point) : List<Point>? {
+        if (!isValid(start) || !isValid(end)) return null
 
-        val allNodes = Array(width) { arrayOfNulls<Node>(height) }
-        val nodeState = Array(width) { ByteArray(height) { 0 } }
+        val startIdx = start.y * width + start.x
+        val endIdx = end.y * width + end.x
 
+        if (!walkableGrid[startIdx] || !walkableGrid[endIdx]) return null
 
-        val startNode = Node(startX, startY).apply { gCost = 0 }
-        allNodes[startX][startY] = startNode
-        openSet.add(startNode)
-        nodeState[startX][startY] = 1
+        iteration += 2
+
+        val openSet = PriorityQueue<Int> { a, b ->
+            val fA = gCost[a] + heuristic.calc(Point.of(a % width, a / width), end)
+            val fB = gCost[b] + heuristic.calc(Point.of(b % width, b / width), end)
+            fA.compareTo(fB)
+        }
+
+        gCost[startIdx] = 0
+        parents[startIdx] = -1
+        openSet.add(startIdx)
+        nodeState[startIdx] = iteration
 
         while (openSet.isNotEmpty()) {
-            val current = openSet.poll()!!
+            val currIdx = openSet.poll()!!
 
-            if (current.x == endX && current.y == endY) {
-                return retracePath(current)
-            }
+            if (nodeState[currIdx] == iteration + 1) continue
 
-            nodeState[current.x][current.y] = 2
+            if (currIdx == endIdx) return retracePath(startIdx, endIdx)
+
+            nodeState[currIdx] = iteration + 1
+
+            val cx = currIdx % width
+            val cy = currIdx / width
 
             for (dx in -1..1) {
                 for (dy in -1..1) {
                     if (dx == 0 && dy == 0) continue
 
-                    val nx = current.x + dx
-                    val ny = current.y + dy
+                    val nx = cx + dx
+                    val ny = cy + dy
+                    val nIdx = ny * width + nx
 
-                    if (isValid(nx, ny) && walkableGrid[nx][ny] && nodeState[nx][ny] != 2.toByte()) {
-                        val stepCost = if (Math.abs(dx) + Math.abs(dy) == 2) 14 else 10
-                        val tentativeGCost = current.gCost + stepCost
+                    if (!isValid(nx, ny) || !walkableGrid[nIdx] || nodeState[nIdx] == iteration + 1) continue
 
-                        val neighbor = allNodes[nx][ny] ?: Node(nx, ny).also { allNodes[nx][ny] = it }
+                    val stepCost = if (dx != 0 && dy != 0) 14 else 10
+                    val newGCost = gCost[currIdx] + stepCost
 
-                        if (tentativeGCost < neighbor.gCost) {
-                            neighbor.parent = current
-                            neighbor.gCost = tentativeGCost
-                            neighbor.hCost = heuristic.calc(nx, ny, endX, endY)
+                    if (nodeState[nIdx] != iteration || newGCost < gCost[nIdx]) {
+                        parents[nIdx] = currIdx
+                        gCost[nIdx] = newGCost
+                        nodeState[nIdx] = iteration
 
-                            if (nodeState[nx][ny] != 1.toByte()) {
-                                openSet.add(neighbor)
-                                nodeState[nx][ny] = 1
-                            } else {
-                                openSet.remove(neighbor)
-                                openSet.add(neighbor)
-                            }
-                        }
+                        openSet.add(nIdx)
                     }
-
                 }
             }
-
         }
         return null
     }
 
-    private fun isValid(x: Int, y: Int) = x in 0 until width && y in 0 until height
-    private fun isValid(node: Node) = node.x in 0 until width && node.y in 0 until height
-
-    private fun retracePath(node: Node): List<Pair<Int, Int>> {
-        val path = mutableListOf<Pair<Int, Int>>()
-        var current: Node? = node
-
-        while (current != null) {
-            path.add(current.x to current.y)
-            current = current.parent
+    override fun findPathAnimated(start: Point, end: Point, delayMs: Long) : Flow<PathfindingEvent> = flow {
+        if (!isValid(start) || !isValid(end)) {
+            emit(PathfindingEvent.PathFound(null))
+            return@flow
         }
-        return path.reversed()
+
+        val startIdx = start.y * width + start.x
+        val endIdx = end.y * width + end.x
+
+        if (!walkableGrid[startIdx] || !walkableGrid[endIdx]) {
+            emit(PathfindingEvent.PathFound(null))
+            return@flow
+        }
+
+        iteration += 2
+
+        val openSet = PriorityQueue<Int> { a, b ->
+            val fA = gCost[a] + heuristic.calc(Point.of(a % width, a / width), end)
+            val fB = gCost[b] + heuristic.calc(Point.of(b % width, b / width), end)
+            fA.compareTo(fB)
+        }
+
+        gCost[startIdx] = 0
+        parents[startIdx] = -1
+        openSet.add(startIdx)
+        nodeState[startIdx] = iteration
+
+        emit(PathfindingEvent.NodesOpened(listOf(start)))
+
+        while (openSet.isNotEmpty()) {
+            val currIdx = openSet.poll()!!
+
+            if (nodeState[currIdx] == iteration + 1) continue
+
+            val cx = currIdx % width
+            val cy = currIdx / width
+
+            emit(PathfindingEvent.NodeClosed(Point.of(cx, cy)))
+
+            if (currIdx == endIdx) {
+                emit(PathfindingEvent.PathFound(retracePath(startIdx, endIdx)))
+                return@flow
+            }
+
+            nodeState[currIdx] = iteration + 1
+
+            val newOpened = mutableListOf<Point>()
+
+            for (dx in -1..1) {
+                for (dy in -1..1) {
+                    if (dx == 0 && dy == 0) continue
+
+                    val nx = cx + dx
+                    val ny = cy + dy
+                    val nIdx = ny * width + nx
+
+                    if (!isValid(nx, ny) || !walkableGrid[nIdx] || nodeState[nIdx] == iteration + 1) continue
+
+                    val stepCost = if (dx != 0 && dy != 0) 14 else 10
+                    val newGCost = gCost[currIdx] + stepCost
+
+                    if (nodeState[nIdx] != iteration || newGCost < gCost[nIdx]) {
+                        val isNew = nodeState[nIdx] != iteration
+
+                        parents[nIdx] = currIdx
+                        gCost[nIdx] = newGCost
+                        nodeState[nIdx] = iteration
+                        openSet.add(nIdx)
+
+                        if (isNew) {
+                            newOpened.add(Point.of(nx, ny))
+                        }
+                    }
+                }
+            }
+            if (newOpened.isNotEmpty()) {
+                emit(PathfindingEvent.NodesOpened(newOpened))
+            }
+            delay(delayMs)
+        }
+        emit(PathfindingEvent.PathFound(null))
+    }
+
+    private fun isValid(x: Int, y: Int) = x in 0 until width && y in 0 until height
+    private fun isValid(point: Point) = point.x in 0 until width && point.y in 0 until height
+
+    private fun retracePath(startIdx: Int, endIdx: Int): List<Point> {
+        var length = 0
+        var counter: Int = endIdx
+        while (counter != -1) {
+            length++
+            if (counter == startIdx) break
+            counter = parents[counter]
+        }
+
+        val path = ArrayList<Point>(length)
+        var current: Int = endIdx
+
+        while (current != -1) {
+            path.add(Point.of(current % width, current / width))
+            if (current == startIdx) break
+            current = parents[current]
+        }
+        path.reverse()
+        return path
     }
 }

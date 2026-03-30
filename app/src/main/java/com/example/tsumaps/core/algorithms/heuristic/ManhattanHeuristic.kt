@@ -1,9 +1,12 @@
 package com.example.tsumaps.core.algorithms.heuristic
 
+import kotlin.math.abs
+import com.example.tsumaps.core.Point
+
 class ManhattanHeuristic : Heuristic {
-    override fun calc(x1: Int, y1: Int, x2: Int, y2: Int): Int {
-        val dx = Math.abs(x2 - x1)
-        val dy = Math.abs(y2 - y1)
+    override fun calc(from: Point, to: Point): Int {
+        val dx = abs(to.x - from.x)
+        val dy = abs(to.y - from.y)
 
         return dx + dy;
     }

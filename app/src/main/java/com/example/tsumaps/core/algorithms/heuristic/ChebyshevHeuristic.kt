@@ -1,10 +1,14 @@
 package com.example.tsumaps.core.algorithms.heuristic
 
-class ChebyshevHeuristic : Heuristic {
-    override fun calc(x1: Int, y1: Int, x2: Int, y2: Int): Int {
-        val dx = Math.abs(x2 - x1)
-        val dy = Math.abs(y2 - y1)
+import kotlin.math.abs
+import kotlin.math.max
+import com.example.tsumaps.core.Point
 
-        return minOf(dx, dy);
+class ChebyshevHeuristic : Heuristic {
+    override fun calc(from: Point, to: Point): Int {
+        val dx = abs(to.x - from.x)
+        val dy = abs(to.y - from.y)
+
+        return 10 * max(dx, dy);
     }
 }
