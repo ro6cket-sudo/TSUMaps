@@ -23,11 +23,26 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.room.Room
+import com.example.tsumaps.points.AppDatabase
+import com.example.tsumaps.points.FoodDao
 import com.example.tsumaps.ui.theme.TSUMapsTheme
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var db: AppDatabase
+    private lateinit var foodDao: FoodDao
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        db = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java, "tsu-map-database"
+        ).build()
+
+        foodDao = db.foodDao()
+
         enableEdgeToEdge()
         setContent {
             TSUMapsTheme {
