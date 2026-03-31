@@ -16,17 +16,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.*
+import com.example.tsumaps.TsuMapScreen
 import com.example.tsumaps.ui.theme.TsuBlue
+import com.example.tsumaps.ui.viewmodels.MapViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
     val sheetState = rememberBottomSheetScaffoldState()
 
     BottomSheetScaffold(
         scaffoldState = sheetState,
-        sheetContent = {BottomSheetContent()},
+        sheetContent = {BottomSheetContent(
+            onBuildClick = { viewModel.buildPath() },
+            isSearching = viewModel.isSearching
+        )},
         sheetPeekHeight = 160.dp,
         sheetShape = RoundedCornerShape(topStart = 50.dp, topEnd = 50.dp),
         sheetShadowElevation = 40.dp,
@@ -37,12 +43,16 @@ fun MainScreen() {
                 .fillMaxSize()
                 .background(Color(0xFFDEE5ED))
         ) {
+            TsuMapScreen(modifier = Modifier.padding(innerPadding),path = viewModel.calculatedPath,
+                startPoint = viewModel.startPoint,
+                endPoint = viewModel.endPoint,
+                onPointSelected = { clickedPoint -> viewModel.onMapClick(clickedPoint)})
         }
     }
 }
 
 @Composable
-fun BottomSheetContent(){
+fun BottomSheetContent(isSearching: Boolean, onBuildClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -55,11 +65,11 @@ fun BottomSheetContent(){
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ActionButton(
-                text = "Построить Маршрут",
+                text = if (isSearching) "Поиск..." else "Построить Маршрут",
                 containerColor = TsuBlue,
                 contentColor = Color.White,
                 modifier = Modifier,
-                onClick = {/* Зпуск А* */}
+                onClick = onBuildClick
             )
         }
     }
