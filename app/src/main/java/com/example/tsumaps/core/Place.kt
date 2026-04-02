@@ -1,12 +1,15 @@
 package com.example.tsumaps.core
 
+import com.example.tsumaps.core.PlaceType
 import kotlin.uuid.Uuid
 
 data class Place(
     val id: Int,
     val name: String,
     val description: String,
-    val x: Int,
-    val y: Int,
-    val type: PlaceType
+    val point: Point,
+    val type: PlaceType,
+    val menu: Set<FoodItem>,
+    val openTime: Int,
+    val closeTime: Int
 )
