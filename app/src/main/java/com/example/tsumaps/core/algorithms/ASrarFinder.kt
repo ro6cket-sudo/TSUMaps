@@ -2,8 +2,9 @@ package com.example.tsumaps.core.algorithms
 
 import com.example.tsumaps.core.MapConstants
 import com.example.tsumaps.core.Point
-import com.example.tsumaps.core.algorithms.heuristic.ChebyshevHeuristic
 import com.example.tsumaps.core.algorithms.heuristic.Heuristic
+import com.example.tsumaps.core.algorithms.heuristic.ChebyshevHeuristic
+import com.example.tsumaps.core.algorithms.heuristic.ManhattanHeuristic
 import com.example.tsumaps.core.algorithms.heuristic.OctileHeuristic
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.delay
