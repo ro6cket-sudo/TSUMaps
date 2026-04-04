@@ -35,8 +35,10 @@ import com.example.tsumaps.ui.viewmodels.MapViewModel
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.IntSize
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,46 +64,40 @@ fun TsuMapScreen(modifier: Modifier = Modifier,
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
-
-    var imageLayoutInfo by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
     val state = rememberTransformableState { zoomChange, offsetChange, _ ->
         scale *= zoomChange
         offset += offsetChange
     }
-
     Box(
         modifier = modifier
-            .fillMaxSize()
+            .onGloballyPositioned { containerSize = it.size }
             .pointerInput(Unit) {
                 detectTapGestures { tapOffset ->
-                    imageLayoutInfo?.let { coords ->
-                        val imageWidth = coords.size.width.toFloat()
-                        val cellSize = imageWidth / MapConstants.GRID_WIDTH
+                    val centerX = containerSize.width / 2f
+                    val centerY = containerSize.height / 2f
 
-                        val adjustedX = (tapOffset.x - offset.x) / scale
-                        val adjustedY = (tapOffset.y - offset.y) / scale
+                    val adjustedX = (tapOffset.x - centerX - offset.x) / scale + centerX
+                    val adjustedY = (tapOffset.y - centerY - offset.y) / scale + centerY
 
-                        val gridX = (adjustedX / cellSize).toInt()
-                        val gridY = (adjustedY / cellSize).toInt()
+                    val cellSize = containerSize.width.toFloat() / MapConstants.GRID_WIDTH
 
-                        if (gridX in 0 until MapConstants.GRID_WIDTH &&
-                            gridY in 0 until MapConstants.GRID_HEIGHT) {
-                                       onPointSelected(Point.of(gridX, gridY))}
+                    val gridX = (adjustedX / cellSize).toInt()
+                    val gridY = (adjustedY / cellSize).toInt()
+
+                    if (gridX in 0 until MapConstants.GRID_WIDTH) {
+                        onPointSelected(Point.of(gridX, gridY))
+                    }
+                }
             }
-        }
-    }
-                .transformable(state = state),
-        contentAlignment = Alignment.Center
-    ){
-        Box(
-            modifier = Modifier
-                .onGloballyPositioned { imageLayoutInfo = it }
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y)
+            .graphicsLayer(
+                scaleX = scale,
+                scaleY = scale,
+                translationX = offset.x,
+                translationY = offset.y
+            )
+            .transformable(state = state)
         ) {
             Image(
                 painter = painterResource(id = R.drawable.tsu_map),
@@ -139,6 +135,6 @@ fun TsuMapScreen(modifier: Modifier = Modifier,
                     )
                 }
             }
-        }
+
     }
 }
