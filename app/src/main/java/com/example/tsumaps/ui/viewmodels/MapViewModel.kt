@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import kotlin.math.sqrt
 
 class MapViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -114,7 +115,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                 if (nx in 0 until MapConstants.GRID_WIDTH && ny in 0 until MapConstants.GRID_HEIGHT) {
                     val index = ny * MapConstants.GRID_WIDTH + nx
                     if (grid[index]) {
-                        val dist = Math.sqrt((dx * dx + dy * dy).toDouble())
+                        val dist = sqrt((dx * dx + dy * dy).toDouble())
                         if (dist < minDistance) {
                             minDistance = dist
                             bestPoint = Point.of(nx, ny)

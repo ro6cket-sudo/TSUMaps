@@ -10,15 +10,12 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.tsumaps.ui.screens.MainScreen
 import androidx.compose.ui.geometry.Offset
@@ -31,12 +28,9 @@ import androidx.compose.ui.res.painterResource
 import com.example.tsumaps.core.MapConstants
 import com.example.tsumaps.core.Point
 import com.example.tsumaps.ui.theme.TSUMapsTheme
-import com.example.tsumaps.ui.viewmodels.MapViewModel
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntSize
 
@@ -45,9 +39,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-
-            val viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-
             TSUMapsTheme {
                 MainScreen()
             }
