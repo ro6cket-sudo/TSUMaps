@@ -131,7 +131,7 @@ fun TsuMapScreen(modifier: Modifier = Modifier,
                     drawPath(
                         path = drawPath,
                         color = Color.Red,
-                        style = Stroke(width = 8f, cap = StrokeCap.Round)
+                        style = Stroke(width = 3f, cap = StrokeCap.Round)
                     )
                 }
             }

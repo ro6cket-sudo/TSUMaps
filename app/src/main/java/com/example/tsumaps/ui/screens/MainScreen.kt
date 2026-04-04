@@ -26,6 +26,14 @@ import com.example.tsumaps.ui.viewmodels.MapViewModel
 fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val sheetState = rememberBottomSheetScaffoldState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    androidx.compose.runtime.LaunchedEffect(viewModel.toastMessage) {
+        viewModel.toastMessage?.let { message ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.clearToast()
+        }
+    }
 
     BottomSheetScaffold(
         scaffoldState = sheetState,

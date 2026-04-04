@@ -17,12 +17,15 @@ import org.json.JSONObject
 class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     private val pathFinder = AStarFinder()
-
+    private var mapGrid: BooleanArray? = null
     var startPoint by mutableStateOf<Point?>(null)
     var endPoint by mutableStateOf<Point?>(null)
     var calculatedPath by mutableStateOf<List<Point>>(emptyList())
     var isSearching by mutableStateOf(false)
 
+    var toastMessage by mutableStateOf<String?>(null)
+        private set
+    fun clearToast() { toastMessage = null }
     init {
         loadMapData()
     }
@@ -43,7 +46,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                 for (i in 0 until dataArray.length()) {
                     booleanGrid[i] = dataArray.getInt(i) == 0
                 }
-
+                mapGrid = booleanGrid
                 pathFinder.setBaseMap(booleanGrid)
 
             } catch (e: Exception) {
@@ -71,6 +74,18 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onMapClick(point: Point) {
+        val grid = mapGrid ?: return
+
+        val nearestRoad = findNearestRoad(point.x, point.y, 5, grid)
+
+        if (nearestRoad == null) {
+            toastMessage = "Здесь нет прохода!"
+            return
+        }
+
+        if (nearestRoad.x != point.x || nearestRoad.y != point.y) {
+            toastMessage = "Точка смещена на ближайшую дорогу"
+        }
 
         if (point.x < 0 || point.x >= MapConstants.GRID_WIDTH ||
             point.y < 0 || point.y >= MapConstants.GRID_HEIGHT) {
@@ -78,11 +93,36 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         if (startPoint == null || (startPoint != null && endPoint != null)) {
-            startPoint = point
+            startPoint = nearestRoad
             endPoint = null
             calculatedPath = emptyList()
         } else {
-            endPoint = point
+            endPoint = nearestRoad
         }
+    }
+
+    private fun findNearestRoad(startX: Int, startY: Int, radius: Int, grid: BooleanArray): Point? {
+        if (grid[startY * MapConstants.GRID_WIDTH + startX]) return Point.of(startX, startY)
+
+        var bestPoint: Point? = null
+        var minDistance = Double.MAX_VALUE
+
+        for (dx in -radius..radius) {
+            for (dy in -radius..radius) {
+                val nx = startX + dx
+                val ny = startY + dy
+                if (nx in 0 until MapConstants.GRID_WIDTH && ny in 0 until MapConstants.GRID_HEIGHT) {
+                    val index = ny * MapConstants.GRID_WIDTH + nx
+                    if (grid[index]) {
+                        val dist = Math.sqrt((dx * dx + dy * dy).toDouble())
+                        if (dist < minDistance) {
+                            minDistance = dist
+                            bestPoint = Point.of(nx, ny)
+                        }
+                    }
+                }
+            }
+        }
+        return bestPoint
     }
 }
