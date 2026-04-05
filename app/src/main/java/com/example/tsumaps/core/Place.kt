@@ -12,4 +12,9 @@ data class Place(
     val menu: Set<FoodItem>,
     val openTime: Int,
     val closeTime: Int
-)
+) {
+    fun minutesUntilClose(currentTime: Int): Int = closeTime - currentTime
+
+    fun isOpen(currentTime: Int): Boolean =
+        currentTime in openTime until closeTime
+}
