@@ -2,6 +2,7 @@ package com.example.tsumaps.ui.viewmodels
 
 import android.app.Application
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
@@ -9,11 +10,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.tsumaps.core.MapConstants
 import com.example.tsumaps.core.Point
 import com.example.tsumaps.core.algorithms.AStarFinder
+import com.example.tsumaps.core.algorithms.PathfindingEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import kotlin.math.sqrt
+import kotlinx.coroutines.Job
 
 class MapViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -26,6 +29,11 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     var toastMessage by mutableStateOf<String?>(null)
         private set
+
+    var openNodes = mutableStateListOf<Point>()
+    var closedNodes = mutableStateListOf<Point>()
+    var finalPath = mutableStateListOf<Point>()
+    private var pathfindingJob: Job? = null
     fun clearToast() { toastMessage = null }
     init {
         loadMapData()
@@ -77,6 +85,11 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     fun onMapClick(point: Point) {
         val grid = mapGrid ?: return
 
+        if (point.x !in 0 until MapConstants.GRID_WIDTH ||
+            point.y !in 0 until MapConstants.GRID_HEIGHT) {
+            return
+        }
+
         val nearestRoad = findNearestRoad(point.x, point.y, 5, grid)
 
         if (nearestRoad == null) {
@@ -99,6 +112,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             calculatedPath = emptyList()
         } else {
             endPoint = nearestRoad
+            startAnimatedPath(startPoint!!, nearestRoad)
         }
     }
 
@@ -125,5 +139,31 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         return bestPoint
+    }
+    fun startAnimatedPath(start: Point, end: Point) {
+        pathfindingJob?.cancel()
+
+        openNodes.clear()
+        closedNodes.clear()
+        finalPath.clear()
+
+        pathfindingJob = viewModelScope.launch {
+            pathFinder.findPathAnimated(start, end).collect { event ->
+                when (event) {
+                    is PathfindingEvent.NodesOpened -> {
+                        openNodes.addAll(event.points)
+                    }
+
+                    is PathfindingEvent.NodeClosed -> {
+                        openNodes.remove(event.point)
+                        closedNodes.add(event.point)
+                    }
+
+                    is PathfindingEvent.PathFound -> {
+                        event.path?.let { finalPath.addAll(it) }
+                    }
+                }
+            }
+        }
     }
 }

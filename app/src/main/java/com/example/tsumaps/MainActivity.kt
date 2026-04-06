@@ -33,7 +33,9 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntSize
-
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tsumaps.ui.viewmodels.MapViewModel
+import androidx.compose.ui.geometry.Size
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,6 +53,7 @@ fun TsuMapScreen(modifier: Modifier = Modifier,
                  path: List<Point>,
                  startPoint: Point?,
                  endPoint: Point?,
+                 viewModel: MapViewModel = viewModel(),
                  onPointSelected: (Point) -> Unit
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
@@ -100,30 +103,34 @@ fun TsuMapScreen(modifier: Modifier = Modifier,
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val cellSize = size.width / MapConstants.GRID_WIDTH
 
-
                 startPoint?.let {
-                    drawCircle(Color.Green, radius = 10f, center = Offset(it.x * cellSize, it.y * cellSize))
-                }
-
+                    drawCircle(Color.Green, radius = 10f, center = Offset(it.x * cellSize, it.y * cellSize)) }
                 endPoint?.let {
-                    drawCircle(Color.Red, radius = 10f, center = Offset(it.x * cellSize, it.y * cellSize))
+                    drawCircle(Color.Red, radius = 10f, center = Offset(it.x * cellSize, it.y * cellSize))}
+                viewModel.closedNodes.forEach { pt ->
+                    drawRect(
+                        color = Color(0x44FF0000),
+                        topLeft = Offset(pt.x * cellSize, pt.y * cellSize),
+                        size = Size(cellSize, cellSize)
+                    )
                 }
 
-                if (path.isNotEmpty()) {
-                    val drawPath = androidx.compose.ui.graphics.Path().apply {
-                        val start = path.first()
-                        moveTo(start.x * cellSize, start.y * cellSize)
-
-                        path.drop(1).forEach { point ->
-                            lineTo(point.x * cellSize, point.y * cellSize)
-                        }
-                    }
-
-                    drawPath(
-                        path = drawPath,
-                        color = Color.Red,
-                        style = Stroke(width = 3f, cap = StrokeCap.Round)
+                viewModel.openNodes.forEach { pt ->
+                    drawRect(
+                        color = Color(0x66FFFF00),
+                        topLeft = Offset(pt.x * cellSize, pt.y * cellSize),
+                        size = Size(cellSize, cellSize)
                     )
+                }
+
+                if (viewModel.finalPath.isNotEmpty()) {
+                    viewModel.finalPath.forEach { pt ->
+                        drawRect(
+                            color = Color.Blue,
+                            topLeft = Offset(pt.x * cellSize, pt.y * cellSize),
+                            size = Size(cellSize, cellSize)
+                        )
+                    }
                 }
             }
 

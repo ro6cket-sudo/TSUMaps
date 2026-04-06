@@ -21,12 +21,12 @@ interface PathFinder {
     fun setBaseMap(walkableMap: BooleanArray)
     fun setObstacles(obstacles: List<Point>)
     fun clearDynamicObstacles()
-    fun findPath(start: Point, end: Point) : List<Point>?
-    fun findPathAnimated(start: Point, end: Point, delayMs: Long = 50L) : Flow<PathfindingEvent>
+    fun findPath(start: Point, end: Point): List<Point>?
+    fun findPathAnimated(start: Point, end: Point): Flow<PathfindingEvent>
 }
 
 
-class AStarFinder (
+class AStarFinder(
     private val width: Int = MapConstants.GRID_WIDTH,
     private val height: Int = MapConstants.GRID_HEIGHT,
     private val size: Int = width * height,
@@ -45,7 +45,7 @@ class AStarFinder (
     }
 
     override fun setObstacles(obstacles: List<Point>) {
-        obstacles.forEach{ point ->
+        obstacles.forEach { point ->
             if (isValid(point)) walkableGrid[point.y * width + point.x] = false
         }
     }
@@ -54,7 +54,7 @@ class AStarFinder (
         System.arraycopy(baseGrid, 0, walkableGrid, 0, baseGrid.size)
     }
 
-    override fun findPath(start: Point, end: Point) : List<Point>? {
+    override fun findPath(start: Point, end: Point): List<Point>? {
         if (!isValid(start) || !isValid(end)) return null
 
         val startIdx = start.y * width + start.x
@@ -95,7 +95,11 @@ class AStarFinder (
                     val ny = cy + dy
                     val nIdx = ny * width + nx
 
-                    if (!isValid(nx, ny) || !walkableGrid[nIdx] || nodeState[nIdx] == iteration + 1) continue
+                    if (!isValid(
+                            nx,
+                            ny
+                        ) || !walkableGrid[nIdx] || nodeState[nIdx] == iteration + 1
+                    ) continue
 
                     val stepCost = if (dx != 0 && dy != 0) 14 else 10
                     val newGCost = gCost[currIdx] + stepCost
@@ -113,11 +117,15 @@ class AStarFinder (
         return null
     }
 
-    override fun findPathAnimated(start: Point, end: Point, delayMs: Long) : Flow<PathfindingEvent> = flow {
-        if (!isValid(start) || !isValid(end)) {
+    override fun findPathAnimated(start: Point, end: Point): Flow<PathfindingEvent> = flow {
+        val foundPath = findPath(start, end)
+
+        if (foundPath == null) {
             emit(PathfindingEvent.PathFound(null))
             return@flow
         }
+
+        val foundPathSet = foundPath.map { it.y * width + it.x }.toHashSet()
 
         val startIdx = start.y * width + start.x
         val endIdx = end.y * width + end.x
@@ -139,6 +147,12 @@ class AStarFinder (
         parents[startIdx] = -1
         openSet.add(startIdx)
         nodeState[startIdx] = iteration
+
+        var stepCount = 0
+
+        val step = 10
+        val stepDelay = 10L
+        val correctPathDelay = 20L
 
         emit(PathfindingEvent.NodesOpened(listOf(start)))
 
@@ -169,7 +183,11 @@ class AStarFinder (
                     val ny = cy + dy
                     val nIdx = ny * width + nx
 
-                    if (!isValid(nx, ny) || !walkableGrid[nIdx] || nodeState[nIdx] == iteration + 1) continue
+                    if (!isValid(
+                            nx,
+                            ny
+                        ) || !walkableGrid[nIdx] || nodeState[nIdx] == iteration + 1
+                    ) continue
 
                     val stepCost = if (dx != 0 && dy != 0) 14 else 10
                     val newGCost = gCost[currIdx] + stepCost
@@ -191,7 +209,13 @@ class AStarFinder (
             if (newOpened.isNotEmpty()) {
                 emit(PathfindingEvent.NodesOpened(newOpened))
             }
-            delay(delayMs)
+
+            if (foundPathSet.contains(currIdx)) {
+                delay(correctPathDelay)
+            } else if (stepCount++ % step == 0) {
+                delay(stepDelay)
+            }
+
         }
         emit(PathfindingEvent.PathFound(null))
     }
