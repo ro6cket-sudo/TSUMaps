@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tsumaps.core.DigitNeuralNetwork
 import com.example.tsumaps.ui.screens.scoreScreec.Draw
 import com.example.tsumaps.ui.screens.scoreScreec.addDraw
 import com.example.tsumaps.ui.theme.TsuBlue
@@ -38,7 +39,7 @@ import com.example.tsumaps.ui.theme.TsuBlue
 fun PixelDrawingScreen() {
     val gridSize = 50
     val context = LocalContext.current
-    val digitRecognizer = remember { DigitRecognizer(context) }
+    val digitRecognizer = remember { DigitNeuralNetwork(context) }
     val grid = remember {
         mutableStateListOf<MutableList<Int>>().apply {
             repeat(gridSize){
@@ -77,7 +78,7 @@ fun PixelDrawingScreen() {
                             lastY = y
                         },
                         onDragEnd = {
-                            score = digitRecognizer.classify(grid)
+                            score = digitRecognizer.claccify(grid)
                         })
                 }){
             Canvas(modifier = Modifier.fillMaxSize()) {

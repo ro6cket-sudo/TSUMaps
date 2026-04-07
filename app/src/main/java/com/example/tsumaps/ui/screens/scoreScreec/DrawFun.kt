@@ -12,10 +12,10 @@ fun Draw(
 ){
     val cellSize = canvasSize.toFloat() / gridSize
 
-    for (i in -2..2){
-        for (j in -2..2){
-            val newX = (x / cellSize).toInt()
-            val newY = (y / cellSize).toInt()
+    for (i in -1..1){
+        for (j in -1..1){
+            val newX = (x / cellSize).toInt() + i
+            val newY = (y / cellSize).toInt() + j
             if (newX in 0 until gridSize && newY in 0 until gridSize){
                 grid[newX][newY] =1
             }
