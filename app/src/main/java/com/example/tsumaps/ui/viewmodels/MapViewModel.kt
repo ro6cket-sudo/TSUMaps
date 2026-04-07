@@ -33,6 +33,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     var openNodes = mutableStateListOf<Point>()
     var closedNodes = mutableStateListOf<Point>()
     var finalPath = mutableStateListOf<Point>()
+    var isSelectionMode by mutableStateOf(false)
+    var isObstacleMode by mutableStateOf(false)
+    val customObstacles = mutableStateListOf<Point>()
     private var pathfindingJob: Job? = null
     fun clearToast() { toastMessage = null }
     init {
@@ -64,26 +67,32 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun buildPath() {
-        val start = startPoint
-        val end = endPoint
+    fun toggleSelectionMode() {
+        isSelectionMode = true
+        startPoint = null
+        endPoint = null
+        pathfindingJob?.cancel()
+        openNodes.clear()
+        closedNodes.clear()
+        finalPath.clear()
+    }
 
-        if (start != null && end != null) {
-            viewModelScope.launch(Dispatchers.Default) {
-                isSearching = true
-
-                val path = pathFinder.findPath(start, end)
-
-                withContext(Dispatchers.Main) {
-                    calculatedPath = path ?: emptyList()
-                    isSearching = false
-                }
-            }
-        }
+    fun toggleObstacleMode() {
+        isObstacleMode = !isObstacleMode
+        if (isObstacleMode) isSelectionMode = false
+        toastMessage = if (isObstacleMode) "Режим рисования стен включен" else "Режим стен выключен"
     }
 
     fun onMapClick(point: Point) {
         val grid = mapGrid ?: return
+        if (isObstacleMode) {
+            if (!customObstacles.contains(point)) {
+                customObstacles.add(point)
+            }
+        }
+
+        if (!isSelectionMode) return
+
 
         if (point.x !in 0 until MapConstants.GRID_WIDTH ||
             point.y !in 0 until MapConstants.GRID_HEIGHT) {
@@ -101,18 +110,24 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             toastMessage = "Точка смещена на ближайшую дорогу"
         }
 
-        if (point.x < 0 || point.x >= MapConstants.GRID_WIDTH ||
-            point.y < 0 || point.y >= MapConstants.GRID_HEIGHT) {
-            return
-        }
-
         if (startPoint == null || (startPoint != null && endPoint != null)) {
             startPoint = nearestRoad
             endPoint = null
             calculatedPath = emptyList()
         } else {
             endPoint = nearestRoad
-            startAnimatedPath(startPoint!!, nearestRoad)
+            isSelectionMode = false
+        }
+    }
+
+    fun onBuildPathClick() {
+        if (startPoint != null && endPoint != null) {
+            pathFinder.clearDynamicObstacles()
+            pathFinder.setObstacles(customObstacles.toList())
+            startAnimatedPath(startPoint!!, endPoint!!)
+        }
+        else {
+            toastMessage = "Сначала установите обе точки"
         }
     }
 

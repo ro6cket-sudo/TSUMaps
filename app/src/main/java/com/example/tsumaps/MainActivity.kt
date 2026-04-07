@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
@@ -67,21 +68,41 @@ fun TsuMapScreen(modifier: Modifier = Modifier,
     Box(
         modifier = modifier
             .onGloballyPositioned { containerSize = it.size }
-            .pointerInput(Unit) {
-                detectTapGestures { tapOffset ->
-                    val centerX = containerSize.width / 2f
-                    val centerY = containerSize.height / 2f
+            .pointerInput(viewModel.isObstacleMode, scale, offset) {
+                if (viewModel.isObstacleMode) {
+                    detectDragGestures { change, _ ->
+                        change.consume()
 
-                    val adjustedX = (tapOffset.x - centerX - offset.x) / scale + centerX
-                    val adjustedY = (tapOffset.y - centerY - offset.y) / scale + centerY
+                        val centerX = size.width / 2f
+                        val centerY = size.height / 2f
 
-                    val cellSize = containerSize.width.toFloat() / MapConstants.GRID_WIDTH
+                        val cellSize = size.width.toFloat() / MapConstants.GRID_WIDTH
 
-                    val gridX = (adjustedX / cellSize).toInt()
-                    val gridY = (adjustedY / cellSize).toInt()
+                        val touchX = change.position.x
+                        val touchY = change.position.y
 
-                    if (gridX in 0 until MapConstants.GRID_WIDTH) {
-                        onPointSelected(Point.of(gridX, gridY))
+                        val mapX = (touchX - centerX - offset.x) / scale + centerX
+                        val mapY = (touchY - centerY - offset.y) / scale + centerY
+
+                        val gridX = (mapX / cellSize).toInt().coerceIn(0, MapConstants.GRID_WIDTH - 1)
+                        val gridY = (mapY / cellSize).toInt().coerceIn(0, MapConstants.GRID_HEIGHT - 1)
+
+                        viewModel.onMapClick(Point.of(gridX, gridY))
+                    }
+                } else {
+                    detectTapGestures { tapOffset ->
+                        val centerX = size.width / 2f
+                        val centerY = size.height / 2f
+
+                        val cellSize = size.width.toFloat() / MapConstants.GRID_WIDTH
+
+                        val mapX = (tapOffset.x - centerX - offset.x) / scale + centerX
+                        val mapY = (tapOffset.y - centerY - offset.y) / scale + centerY
+
+                        val gridX = (mapX / cellSize).toInt().coerceIn(0, MapConstants.GRID_WIDTH - 1)
+                        val gridY = (mapY / cellSize).toInt().coerceIn(0, MapConstants.GRID_HEIGHT - 1)
+
+                        viewModel.onMapClick(Point.of(gridX, gridY))
                     }
                 }
             }
@@ -118,6 +139,14 @@ fun TsuMapScreen(modifier: Modifier = Modifier,
                 viewModel.openNodes.forEach { pt ->
                     drawRect(
                         color = Color(0x66FFFF00),
+                        topLeft = Offset(pt.x * cellSize, pt.y * cellSize),
+                        size = Size(cellSize, cellSize)
+                    )
+                }
+
+                viewModel.customObstacles.forEach { pt ->
+                    drawRect(
+                        color = Color.Black,
                         topLeft = Offset(pt.x * cellSize, pt.y * cellSize),
                         size = Size(cellSize, cellSize)
                     )
