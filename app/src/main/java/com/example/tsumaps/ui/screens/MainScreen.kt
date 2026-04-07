@@ -44,7 +44,8 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
             isSelectionMode = viewModel.isSelectionMode,
             onSelectionModeClick = { viewModel.toggleSelectionMode() },
             isObstacleMode = viewModel.isObstacleMode,
-            onObstacleClick = { viewModel.toggleObstacleMode() }
+            onObstacleClick = { viewModel.toggleObstacleMode() },
+            onClearObstaclesClick = {viewModel.clearObstacles()}
         )},
         sheetPeekHeight = 160.dp,
         sheetShape = RoundedCornerShape(topStart = 50.dp, topEnd = 50.dp),
@@ -66,7 +67,8 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
 
 @Composable
 fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit, isSelectionMode: Boolean,
-                       onSelectionModeClick: () -> Unit, isObstacleMode: Boolean, onObstacleClick: () -> Unit,) {
+                       onSelectionModeClick: () -> Unit, isObstacleMode: Boolean, onObstacleClick: () -> Unit,
+                       onClearObstaclesClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -103,6 +105,14 @@ fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit, isSel
                 contentColor = Color.White,
                 modifier = Modifier.weight(1f),
                 onClick = onObstacleClick
+            )
+
+            ActionButton(
+                text = "Очистить стены",
+                containerColor = TsuBlue,
+                contentColor = Color.White,
+                modifier = Modifier.weight(0.4f),
+                onClick = onClearObstaclesClick
             )
         }
     }

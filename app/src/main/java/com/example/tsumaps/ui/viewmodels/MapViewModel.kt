@@ -83,12 +83,33 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         toastMessage = if (isObstacleMode) "Режим рисования стен включен" else "Режим стен выключен"
     }
 
+    fun clearObstacles() {
+        customObstacles.clear()
+        pathFinder.clearDynamicObstacles()
+        toastMessage = "Стены очищены"
+    }
+
+
     fun onMapClick(point: Point) {
         val grid = mapGrid ?: return
         if (isObstacleMode) {
-            if (!customObstacles.contains(point)) {
-                customObstacles.add(point)
+            val raduis = 1
+
+            for (dx in -raduis..raduis) {
+                for (dy in -raduis..raduis) {
+                    val nx = point.x + dx
+                    val ny = point.y + dy
+
+                    if (nx in 0 until MapConstants.GRID_WIDTH &&
+                        ny in 0 until MapConstants.GRID_HEIGHT) {
+                        val newPoint = Point.of(nx,ny)
+                        if (!customObstacles.contains(newPoint)) {
+                            customObstacles.add(newPoint)
+                        }
+                    }
+                }
             }
+            return
         }
 
         if (!isSelectionMode) return
