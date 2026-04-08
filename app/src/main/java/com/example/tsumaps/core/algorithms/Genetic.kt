@@ -4,7 +4,12 @@ import com.example.tsumaps.core.FoodItem
 import com.example.tsumaps.core.Place
 import com.example.tsumaps.core.algorithms.genetic.GeneticEvent
 import com.example.tsumaps.core.algorithms.genetic.GeneticOptimizer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.isActive
 import kotlin.math.min
 import kotlin.random.Random
 
@@ -26,9 +31,126 @@ class Genetic(
         currentTime: Int,
         distanceMatrix: Array<IntArray>,
         startDistances: IntArray
-    ): Flow<GeneticEvent> {
-        TODO("Not yet implemented")
-    }
+    ): Flow<GeneticEvent> = flow {
+        val relevantIndices = places.indices.filter { i ->
+            places[i].isOpen(currentTime) && places[i].menu.any { it in order }
+        }
+
+        val relevantPlaces = relevantIndices.map { places[it] }
+        val relevantDistMatrix = buildRelevantMatrix(distanceMatrix, relevantIndices)
+        val relevantStartDist = IntArray(relevantIndices.size) { i -> startDistances[relevantIndices[i]] }
+
+
+        if (relevantPlaces.isEmpty()) {
+            emit(GeneticEvent.NoSolutionFound)
+            return@flow
+        }
+
+        val n = relevantPlaces.size
+        val menuMasks = IntArray(n) { i ->
+            relevantPlaces[i].menu.fold(0) { acc, item -> acc or item.bit }
+        }
+        val requiredMask = order.fold(0) { acc, item -> acc or item.bit }
+
+        val totalAvailable = menuMasks.fold(0) { acc, mask -> acc or mask }
+
+        if (totalAvailable and requiredMask != requiredMask) {
+            emit(GeneticEvent.NoSolutionFound)
+            return@flow
+        }
+
+        val rng = Random(System.currentTimeMillis())
+
+        var current = initPopulation(
+            n, populationSize, menuMasks, requiredMask, relevantDistMatrix, relevantStartDist, rng
+        )
+
+        var next = Array(populationSize) { IntArray(n) }
+
+        val fitnessArr = IntArray(populationSize)
+
+        val eliteVisitVersion = IntArray(populationSize)
+        var eliteVersion = 0
+
+        val inChildVersion = IntArray(n)
+        var crossoverVersion = 0
+
+        var bestChromosome = current[0].copyOf()
+        var bestCost = Int.MAX_VALUE
+        var bestIteration = 0
+        var noImprovementCount = 0
+
+        for (iteration in 0 until maxIterations) {
+            if (!currentCoroutineContext().isActive) break
+
+            for (i in 0 until populationSize) {
+                fitnessArr[i] = evaluateFitness(
+                    chromosome = current[i],
+                    places = relevantPlaces,
+                    menuMasks = menuMasks,
+                    requiredMask = requiredMask,
+                    distanceMatrix = relevantDistMatrix,
+                    startDistance = relevantStartDist,
+                    startTime = currentTime
+                )
+            }
+
+            var bestIdxNow = 0
+            for (i in 1 until populationSize) {
+                if (fitnessArr[i] < fitnessArr[bestIdxNow]) bestIdxNow = i
+            }
+            val bestCostNow = fitnessArr[bestIdxNow]
+
+            if (bestCostNow < bestCost) {
+                bestCost = bestCostNow
+                bestChromosome = current[bestIdxNow].copyOf()
+                bestIteration = iteration
+                noImprovementCount = 0
+
+                emit(GeneticEvent.NewBestRoute(
+                    iteration = iteration,
+                    route = chromosomeToRoute(bestChromosome, relevantPlaces, menuMasks, requiredMask),
+                    totalCost = bestCost
+                ))
+            } else noImprovementCount++
+
+            if (noImprovementCount >= convergenceLimit) break
+
+
+            eliteVersion++
+            for (e in 0 until eliteCount) {
+                var bestEliteIdx = -1
+                for (i in 0 until populationSize) {
+                    if (eliteVisitVersion[i] == eliteVersion) continue
+                    if (bestEliteIdx == -1 || fitnessArr[i] < fitnessArr[bestEliteIdx]) {
+                        bestEliteIdx = i
+                    }
+                }
+                eliteVisitVersion[bestEliteIdx] = eliteVersion
+                current[bestEliteIdx].copyInto(next[e])
+            }
+
+            for (i in eliteCount until populationSize) {
+                val parent1 = tournamentSelect(current, fitnessArr, rng)
+                val parent2 = tournamentSelect(current, fitnessArr, rng)
+
+                crossoverVersion++
+                orderCrossover(parent1, parent2, next[i], inChildVersion, crossoverVersion, rng)
+                if (rng.nextFloat() < mutationProb) mutate(next[i], rng)
+            }
+
+            val tmp = current
+            current = next
+            next = tmp
+        }
+
+        emit(GeneticEvent.EvolutionFinished(
+            finalRoute = chromosomeToRoute(bestChromosome, relevantPlaces, menuMasks, requiredMask),
+            totalCost = bestCost,
+            iterations = bestIteration
+        ))
+
+    }.flowOn(Dispatchers.Default)
 
     private fun initPopulation(
         n: Int,
@@ -206,7 +328,7 @@ class Genetic(
         val j = rng.nextInt(chromosome.size)
         val tmp = chromosome[i]
         chromosome[i] = chromosome[j]
-        chromosome[j] = chromosome[i]
+        chromosome[j] = tmp
     }
 
     private fun chromosomeToRoute(
