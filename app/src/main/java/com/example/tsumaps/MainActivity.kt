@@ -6,9 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -21,8 +23,6 @@ import androidx.compose.ui.Modifier
 import com.example.tsumaps.ui.screens.MainScreen
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -30,13 +30,14 @@ import com.example.tsumaps.core.MapConstants
 import com.example.tsumaps.core.Point
 import com.example.tsumaps.ui.theme.TSUMapsTheme
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tsumaps.ui.viewmodels.MapViewModel
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.input.pointer.positionChanged
+import kotlin.math.sqrt
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,68 +52,120 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TsuMapScreen(modifier: Modifier = Modifier,
-                 path: List<Point>,
                  startPoint: Point?,
                  endPoint: Point?,
-                 viewModel: MapViewModel = viewModel(),
-                 onPointSelected: (Point) -> Unit
+                 viewModel: MapViewModel = viewModel()
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
-    var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
-    val state = rememberTransformableState { zoomChange, offsetChange, _ ->
-        scale *= zoomChange
-        offset += offsetChange
-    }
     Box(
         modifier = modifier
-            .onGloballyPositioned { containerSize = it.size }
-            .pointerInput(viewModel.isObstacleMode, scale, offset) {
-                if (viewModel.isObstacleMode) {
-                    detectDragGestures { change, _ ->
-                        change.consume()
+            .pointerInput(viewModel.isObstacleMode) {
+                awaitEachGesture {
+                    val touchSlop = viewConfiguration.touchSlop
+                    val down = awaitFirstDown(requireUnconsumed = false)
 
-                        val centerX = size.width / 2f
-                        val centerY = size.height / 2f
+                    var isTap = true
+                    var lastPosition = down.position
+                    var lastCentroid = Offset.Zero
+                    var isZooming = false
+                    var skipFrames = 0
 
-                        val cellSize = size.width.toFloat() / MapConstants.GRID_WIDTH
+                    do {
+                        val event = awaitPointerEvent()
+                        val pressedCount = event.changes.count {it.pressed}
 
-                        val touchX = change.position.x
-                        val touchY = change.position.y
+                        when {
+                            pressedCount >= 2 -> {
+                                isTap = false
+                                isZooming = true
+                                skipFrames = 0
 
-                        val mapX = (touchX - centerX - offset.x) / scale + centerX
-                        val mapY = (touchY - centerY - offset.y) / scale + centerY
+                                val centroid = event.calculateCentroid(useCurrent = true)
+                                val centroidJump = if (lastCentroid == Offset.Zero) Float.MAX_VALUE else
+                                    sqrt((centroid.x - lastCentroid.x) * (centroid.x - lastCentroid.x) +
+                                            (centroid.y - lastCentroid.y) * (centroid.y - lastCentroid.y)
+                                    )
 
-                        val gridX = (mapX / cellSize).toInt().coerceIn(0, MapConstants.GRID_WIDTH - 1)
-                        val gridY = (mapY / cellSize).toInt().coerceIn(0, MapConstants.GRID_HEIGHT - 1)
+                                if (lastCentroid != Offset.Zero && centroidJump < 150f) {
+                                    val zoomChange = event.calculateZoom()
+                                    val panChange = event.calculatePan()
+                                    val oldScale = scale
+                                    val newScale = (oldScale * zoomChange).coerceIn(0.5f, 10f)
 
-                        viewModel.onMapClick(Point.of(gridX, gridY))
-                    }
-                } else {
-                    detectTapGestures { tapOffset ->
-                        val centerX = size.width / 2f
-                        val centerY = size.height / 2f
+                                    offset = Offset(
+                                        x = centroid.x - (centroid.x - offset.x) / oldScale * newScale + panChange.x,
+                                        y = centroid.y - (centroid.y - offset.y) / oldScale * newScale + panChange.y
+                                    )
+                                    scale = newScale
+                                }
+                                lastCentroid = centroid
+                                lastPosition = centroid
+                                event.changes.forEach { it.consume() }
+                            }
 
-                        val cellSize = size.width.toFloat() / MapConstants.GRID_WIDTH
+                            else -> {
+                                if (isZooming) {
+                                    skipFrames++
+                                    if (skipFrames >= 3) {
+                                        isZooming = false
+                                        lastCentroid = Offset.Zero
+                                        event.changes.firstOrNull()?.let {
+                                            lastPosition = it.position
+                                        }
+                                    }
+                                    event.changes.forEach { it.consume() }
+                                }
+                                else {
+                                    val change = event.changes.firstOrNull() ?: continue
 
-                        val mapX = (tapOffset.x - centerX - offset.x) / scale + centerX
-                        val mapY = (tapOffset.y - centerY - offset.y) / scale + centerY
+                                    if (change.positionChanged()) {
+                                        val dragDist = sqrt ((change.position.x - down.position.x) *
+                                                (change.position.x - down.position.x) +
+                                                (change.position.y - down.position.y) *
+                                                (change.position.y - down.position.y)
+                                        )
+                                        if (dragDist > touchSlop) isTap = false
+                                    }
 
-                        val gridX = (mapX / cellSize).toInt().coerceIn(0, MapConstants.GRID_WIDTH - 1)
-                        val gridY = (mapY / cellSize).toInt().coerceIn(0, MapConstants.GRID_HEIGHT - 1)
+                                    if (!isTap && change.pressed) {
+                                        change.consume()
+                                        if (viewModel.isObstacleMode) {
+                                            val cellSize = size.width.toFloat() / MapConstants.GRID_WIDTH
+                                            val mapX = (change.position.x - offset.x) / scale
+                                            val mapY = (change.position.y - offset.y) / scale
+                                            val gridX = (mapX / cellSize).toInt().coerceIn(0, MapConstants.GRID_WIDTH - 1)
+                                            val gridY = (mapY / cellSize).toInt().coerceIn(0, MapConstants.GRID_HEIGHT - 1)
+                                            viewModel.onMapClick(Point.of(gridX, gridY))
+                                        }
+                                        else {
+                                            offset += change.position - lastPosition
+                                        }
+                                    }
+                                    lastPosition = change.position
 
-                        viewModel.onMapClick(Point.of(gridX, gridY))
-                    }
+                                    if (!change.pressed && isTap) {
+                                        val cellSize = size.width.toFloat() / MapConstants.GRID_WIDTH
+                                        val mapX = (down.position.x - offset.x) / scale
+                                        val mapY = (down.position.y - offset.y) / scale
+                                        val gridX = (mapX / cellSize).toInt().coerceIn(0, MapConstants.GRID_WIDTH - 1)
+                                        val gridY = (mapY / cellSize).toInt().coerceIn(0, MapConstants.GRID_HEIGHT - 1)
+                                        viewModel.onMapClick(Point.of(gridX, gridY))
+                                    }
+                                }
+                            }
+                        }
+                    } while (event.changes.any {it.pressed})
                 }
             }
             .graphicsLayer(
                 scaleX = scale,
                 scaleY = scale,
                 translationX = offset.x,
-                translationY = offset.y
+                translationY = offset.y,
+                transformOrigin = TransformOrigin(0f, 0f)
             )
-            .transformable(state = state)
         ) {
             Image(
                 painter = painterResource(id = R.drawable.tsu_map),

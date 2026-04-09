@@ -57,10 +57,9 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
                 .fillMaxSize()
                 .background(Color(0xFFDEE5ED))
         ) {
-            TsuMapScreen(modifier = Modifier.padding(innerPadding),path = viewModel.calculatedPath,
+            TsuMapScreen(modifier = Modifier.padding(innerPadding),
                 startPoint = viewModel.startPoint,
-                endPoint = viewModel.endPoint,
-                onPointSelected = { clickedPoint -> viewModel.onMapClick(clickedPoint)})
+                endPoint = viewModel.endPoint)
         }
     }
 }
