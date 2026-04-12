@@ -1,4 +1,4 @@
-package com.example.tsumaps.core
+package com.example.tsumaps.core.DigitRecognizer
 
 import android.content.Context
 import org.json.JSONArray
@@ -17,13 +17,13 @@ class TrainableDigitNeuralNetwork(context: Context) : DigitNeuralNetwork(context
     private fun randomizeWeights(){
         for (i in 0 until INPUT_SIZE){
             for (j in 0 until HIDDEN_SIZE){
-                w1[i][j] = Random.nextFloat() * 0.2f - 0.1f
+                w1[i][j] = Random.Default.nextFloat() * 0.2f - 0.1f
             }
         }
 
         for (i in 0 until HIDDEN_SIZE){
             for (j in 0 until OUTPUT_SIZE){
-                w2[i][j] = Random.nextFloat() * 0.2f - 0.1f
+                w2[i][j] = Random.Default.nextFloat() * 0.2f - 0.1f
             }
         }
     }

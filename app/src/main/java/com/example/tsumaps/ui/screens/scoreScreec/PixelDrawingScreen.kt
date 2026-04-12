@@ -30,7 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tsumaps.core.DigitNeuralNetwork
+import com.example.tsumaps.core.DigitRecognizer.DigitNeuralNetwork
 import com.example.tsumaps.ui.screens.scoreScreec.Draw
 import com.example.tsumaps.ui.screens.scoreScreec.addDraw
 import com.example.tsumaps.ui.theme.TsuBlue
