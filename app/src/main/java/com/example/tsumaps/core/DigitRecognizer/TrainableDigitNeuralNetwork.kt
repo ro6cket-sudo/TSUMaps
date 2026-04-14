@@ -6,7 +6,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import kotlin.random.Random
-import kotlin.random.nextInt
 
 class TrainableDigitNeuralNetwork(private val context: Context) : DigitNeuralNetwork(context){
 
@@ -148,7 +147,7 @@ class TrainableDigitNeuralNetwork(private val context: Context) : DigitNeuralNet
         json.put("b2", b2json)
 
         try{
-            val file = File(context.filesDir, "weights.json")
+            val file = File(context.filesDir, "weights(python).json")
             file.writeText(json.toString())
             android.util.Log.d("AI", "Файл успешно сохранен по пути:${file.absolutePath}")
         }catch (e: Exception){

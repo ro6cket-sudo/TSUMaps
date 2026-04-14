@@ -21,8 +21,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             TSUMapsTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-//                    PixelDrawingScreen()
-                    TrainingScreen()
+                    PixelDrawingScreen()
+//                    TrainingScreen()
                 }
             }
         }

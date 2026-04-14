@@ -22,7 +22,7 @@ open class DigitNeuralNetwork(context: Context) {
     }
 
     fun loadWeightsFromJson(context: Context){
-        val jsonString = context.assets.open("weights.json").bufferedReader().use {it.readText()}
+        val jsonString = context.assets.open("weights(python).json").bufferedReader().use {it.readText()}
         val json = JSONObject(jsonString)
 
         val w1json = json.getJSONArray("w1")
