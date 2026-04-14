@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.DataInputStream
 import java.io.File
 import kotlin.random.Random
 
@@ -92,7 +93,7 @@ class TrainableDigitNeuralNetwork(private val context: Context) : DigitNeuralNet
         }
     }
 
-    public fun trainEpoch(dataset: List<Pair<List<List<Int>>, Int>>, epochs: Int){
+    fun trainEpoch(dataset: List<Pair<List<List<Int>>, Int>>, epochs: Int){
         Log.d("AI", "ОБУЧЕНИЕ НАЧАЛОСЬ! Всего картинок: ${dataset.size}, Эпох: $epochs")
 
         for (epoch in 1..epochs){
@@ -110,6 +111,57 @@ class TrainableDigitNeuralNetwork(private val context: Context) : DigitNeuralNet
         }
         Log.d("AI", "Сохраняем в json...")
         saveWeightsToJson()
+    }
+
+    fun trainOnFullMnist(context: Context, epochs: Int) {
+        Log.d("AI", "Начинаем обучение на 60000 картинках")
+
+        for (epoch in 1..epochs){
+            var correctAnswers = 0
+            var totalProcessed = 0
+
+            val labelsStream = DataInputStream(context.assets.open("train-labels.idx1-ubyte"))
+            val imagesStream = DataInputStream(context.assets.open("train-images.idx3-ubyte"))
+
+            val magicLabels = labelsStream.readInt()
+            val numberLabels = labelsStream.readInt()
+
+            val magicImages = imagesStream.readInt()
+            val numberImages = imagesStream.readInt()
+            val rows = imagesStream.readInt()
+            val columns = imagesStream.readInt()
+
+            for (i in 0 until numberImages){
+                val label = labelsStream.readUnsignedByte()
+                val image = mutableListOf<List<Int>>()
+                for (row in 0 until rows){
+                    val rowPixels = mutableListOf<Int>()
+                    for (column in 0 until columns){
+                        rowPixels.add(imagesStream.readUnsignedByte())
+                    }
+                    image.add(rowPixels)
+                }
+
+                val newImage = scale(image, 50, 50)
+                if (claccify(newImage) == label){
+                    correctAnswers++
+                }
+                trainSingleImage(shiftImage(newImage), label, 0.01f)
+                totalProcessed++
+
+                if (totalProcessed % 5000 == 0){
+                    val tempAccuracy = (correctAnswers.toFloat() / totalProcessed) * 100
+                    Log.d("AI", "Эпоха $epoch: обработано $totalProcessed/60000... " +
+                            "Точность: $tempAccuracy")
+                }
+            }
+            labelsStream.close()
+            imagesStream.close()
+
+            val accuracy = (correctAnswers.toFloat() / numberImages) * 100
+            Log.d("AI", "Эпоха $epoch завершена! Итоговая точность: $accuracy")
+            saveWeightsToJson()
+        }
     }
 
     private fun saveWeightsToJson() {
