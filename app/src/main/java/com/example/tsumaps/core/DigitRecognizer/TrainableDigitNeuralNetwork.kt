@@ -1,12 +1,14 @@
 package com.example.tsumaps.core.DigitRecognizer
 
 import android.content.Context
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import kotlin.random.Random
+import kotlin.random.nextInt
 
-class TrainableDigitNeuralNetwork(context: Context) : DigitNeuralNetwork(context){
+class TrainableDigitNeuralNetwork(private val context: Context) : DigitNeuralNetwork(context){
 
     init {
         if (w1[0][0] == 0f && w2[0][0] == 0f){
@@ -28,7 +30,26 @@ class TrainableDigitNeuralNetwork(context: Context) : DigitNeuralNetwork(context
         }
     }
 
+    private fun shiftImage(grid: List<List<Int>>): List<List<Int>>{
+        val shiftX = Random.nextInt(-3, 4)
+        val shiftY = Random.nextInt(-3, 4)
+        val newGrid = MutableList(50) { MutableList(50) {0} }
+
+        for (y in 0 until 50){
+            for (x in 0 until 50){
+                val oldX = x - shiftX
+                val oldY = y - shiftY
+                if (oldX in 0 until 50 && oldY in 0 until 50){
+                    newGrid[y][x] = grid[oldY][oldX]
+                }
+            }
+        }
+        return newGrid
+    }
+
     private fun trainSingleImage(grid: List<List<Int>>, correctNumber: Int, learningSpeed: Float){
+        val L2 = 0.0001F
+
         val input = FloatArray(INPUT_SIZE)
         for (i in 0 until 50){
             for ( j in 0 until 50){
@@ -55,22 +76,26 @@ class TrainableDigitNeuralNetwork(context: Context) : DigitNeuralNetwork(context
             hiddenError[i] = errorSum * reluDifferential(hidden[i])
         }
 
-        for (i in 0 until OUTPUT_SIZE){
-            for (j in 0 until HIDDEN_SIZE){
-                w2[j][i] -= learningSpeed * outputError[j] * hidden[j]
+        for (out in 0 until OUTPUT_SIZE){
+            for (hid in 0 until HIDDEN_SIZE) {
+                val gradient = outputError[out] * hidden[hid] + (L2 * w2[hid][out])
+                w2[hid][out] -= learningSpeed * gradient
             }
-            b2[i] -= learningSpeed * outputError[i]
+            b2[out] -= learningSpeed * outputError[out]
         }
 
-        for (i in 0 until HIDDEN_SIZE){
-            for (j in 0 until INPUT_SIZE) {
-                w1[j][i] -= learningSpeed * hiddenError[j] * input[j]
+        for (hid in 0 until HIDDEN_SIZE){
+            for (inId in 0 until INPUT_SIZE){
+                val gradient = hiddenError[hid] * input[inId] + (L2 * w1[inId][hid])
+                w1[inId][hid] -= learningSpeed * gradient
             }
-            b2[i] -= learningSpeed * hiddenError[i]
+            b1[hid] -= learningSpeed * hiddenError[hid]
         }
     }
 
     public fun trainEpoch(dataset: List<Pair<List<List<Int>>, Int>>, epochs: Int){
+        Log.d("AI", "ОБУЧЕНИЕ НАЧАЛОСЬ! Всего картинок: ${dataset.size}, Эпох: $epochs")
+
         for (epoch in 1..epochs){
             val shuffledDataset = dataset.shuffled()
             var correctAnswers = 0
@@ -78,9 +103,13 @@ class TrainableDigitNeuralNetwork(context: Context) : DigitNeuralNetwork(context
                 if (claccify(grid) == number){
                     correctAnswers++
                 }
-                trainSingleImage(grid, number, 0.01f)
+                val shiftGrid = shiftImage(grid)
+                trainSingleImage(shiftGrid, number, 0.01f)
             }
+            val accuracy = (correctAnswers.toFloat() / dataset.size) * 100
+            Log.d("AI", "Эпоха $epoch завершена. Точность: $accuracy")
         }
+        Log.d("AI", "Сохраняем в json...")
         saveWeightsToJson()
     }
 
@@ -118,6 +147,13 @@ class TrainableDigitNeuralNetwork(context: Context) : DigitNeuralNetwork(context
         }
         json.put("b2", b2json)
 
-        File("weights.json").writeText(json.toString())
+        try{
+            val file = File(context.filesDir, "weights.json")
+            file.writeText(json.toString())
+            android.util.Log.d("AI", "Файл успешно сохранен по пути:${file.absolutePath}")
+        }catch (e: Exception){
+            e.printStackTrace()
+            android.util.Log.d("AI", "Ошибка при сохранение файла", e)
+        }
     }
 }

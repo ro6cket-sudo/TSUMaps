@@ -57,7 +57,7 @@ open class DigitNeuralNetwork(context: Context) {
 
     private fun softmax(input: FloatArray): FloatArray {
         val maxVal = input.maxOrNull() ?: 0f
-        val e = FloatArray(input.size) { exp(input[it]) - maxVal}
+        val e = FloatArray(input.size) { exp(input[it] - maxVal)}
         val sum = e.sum()
         return FloatArray(input.size) {e[it] / sum}
     }

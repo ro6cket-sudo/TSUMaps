@@ -3,10 +3,10 @@ package com.example.tsumaps.core.DigitRecognizer
 import android.content.Context
 import java.io.DataInputStream
 
-private fun loadMnistUbyte(maxImages: Int, context: Context): List<Pair<List<List<Int>>, Int>>{
+public fun loadMnistUbyte(maxImages: Int, context: Context): List<Pair<List<List<Int>>, Int>>{
     val dataset = mutableListOf<Pair<List<List<Int>>, Int>>()
-    val labelsStream = DataInputStream(context.assets.open("train-labels.inx1-ubyte"))
-    val imagesStream = DataInputStream(context.assets.open("train-labels.inx3-ubyte"))
+    val labelsStream = DataInputStream(context.assets.open("train-labels.idx1-ubyte"))
+    val imagesStream = DataInputStream(context.assets.open("train-images.idx3-ubyte"))
 
     val magicLabels = labelsStream.readInt()
     val numberLabels = labelsStream.readInt()
