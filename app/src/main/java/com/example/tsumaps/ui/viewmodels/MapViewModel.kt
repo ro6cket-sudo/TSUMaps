@@ -8,12 +8,13 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tsumaps.core.MapConstants
+import com.example.tsumaps.core.Place
+import com.example.tsumaps.core.PlaceStorage
 import com.example.tsumaps.core.Point
 import com.example.tsumaps.core.algorithms.AStarFinder
 import com.example.tsumaps.core.algorithms.PathfindingEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import kotlin.math.sqrt
 import kotlinx.coroutines.Job
@@ -88,7 +89,6 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         pathFinder.clearDynamicObstacles()
         toastMessage = "Стены очищены"
     }
-
 
     fun onMapClick(point: Point) {
         val grid = mapGrid ?: return
@@ -202,4 +202,8 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
+    val visiblePlaces: List<Place>
+        get() = PlaceStorage.places
+
 }
