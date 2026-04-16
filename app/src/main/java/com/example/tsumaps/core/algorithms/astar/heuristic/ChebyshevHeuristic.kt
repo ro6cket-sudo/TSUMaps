@@ -1,4 +1,4 @@
-package com.example.tsumaps.core.algorithms.heuristic
+package com.example.tsumaps.core.algorithms.astar.heuristic
 
 import kotlin.math.abs
 import kotlin.math.max

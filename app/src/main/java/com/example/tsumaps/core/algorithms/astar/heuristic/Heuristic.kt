@@ -1,4 +1,4 @@
-package com.example.tsumaps.core.algorithms.heuristic
+package com.example.tsumaps.core.algorithms.astar.heuristic
 
 import com.example.tsumaps.core.Point
 
