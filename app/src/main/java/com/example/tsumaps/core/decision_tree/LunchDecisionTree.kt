@@ -9,7 +9,7 @@ class LunchDecisionTree(
     var root: TreeNode? = null
     private val targetColumn = "recommended_place"
 
-    fun parceCsv(cscText: String): List<DataRow> {
+    fun parseCsv(cscText: String): List<DataRow> {
         val lines = cscText.trim().lines().filter {it.isNotBlank()}
         val headers = lines.first().split(",").map {it.trim()}
         val dataset = mutableListOf<DataRow>()
@@ -24,7 +24,7 @@ class LunchDecisionTree(
                     target = values[j]
                 }
                 else{
-                    features[headers[j]] = values[i]
+                    features[headers[j]] = values[j]
                 }
             }
             dataset.add(DataRow(features, target))
@@ -66,6 +66,38 @@ class LunchDecisionTree(
         return (calculateGini(data) * 2 + calculateEntropy(data)) / 2.0F
     }
 
+    fun train(data: List<DataRow>){
+        root = buildTree(data, 0)
+    }
+
+    private fun buildTree(data: List<DataRow>, depth: Int): TreeNode{
+        val majorityClass = data.groupingBy { it.target }.eachCount().maxByOrNull { it.value }?.key ?: ""
+
+        if (data.isEmpty() || data.map {it.target}.distinct().size == 1 || depth >= maxDepth){
+            return TreeNode(isLeaf = true, prediction = majorityClass)
+        }
+
+        val features = data.first().features.keys
+        var bestFeature = ""
+        var bestImpurity = Float.MAX_VALUE
+
+        for (feature in features){
+            val impurity = calculateSplitImpurity(data, feature)
+            if (impurity < bestImpurity){
+                bestImpurity = impurity
+                bestFeature = feature
+            }
+        }
+
+        val node = TreeNode(feature = bestFeature, planB = majorityClass)
+        val branches = data.groupBy { it.features[bestFeature]!! }
+
+        for ((value, subset) in branches) {
+            node.children[value] = buildTree(subset, depth + 1)
+        }
+        return node
+    }
+
     private fun calculateSplitImpurity(data: List<DataRow>, feature: String): Float {
         if (data.isEmpty()){
             return 0.0F
@@ -77,5 +109,48 @@ class LunchDecisionTree(
             splitImpurity += normalize * calculateImpurity(subset)
         }
         return splitImpurity
+    }
+
+    fun predict(input: Map<String, String>): Pair<String, List<String>> {
+        val path = mutableListOf<String>()
+        var currentNode = root ?: return Pair("Нет данных", path)
+
+        while (!currentNode.isLeaf){
+            val feature = currentNode.feature
+            val value = input[feature]
+            path.add("$feature: $value")
+
+            val nextNode = currentNode.children[value]
+            if (nextNode == null) {
+                path.add("НЕизвестное значение, идем по Plan B")
+                return Pair(currentNode.planB, path)
+            }
+            currentNode = nextNode
+        }
+        return Pair(currentNode.prediction ?: "Ошибка", path)
+    }
+
+    private fun pruning(node: TreeNode){
+        if (node.isLeaf){
+            return
+        }
+
+        for (child in node.children.values){
+            pruning(child)
+        }
+
+        if (node.children.values.isNotEmpty() && node.children.values.all { it.isLeaf }){
+            val firstPrediction = node.children.values.first().prediction
+            if (node.children.values.all { it.prediction == firstPrediction }){
+                node.isLeaf = true
+                node.prediction = firstPrediction
+                node.children.clear()
+                node.feature = null
+            }
+        }
+    }
+
+    fun optimize(){
+        root?.let { pruning(it)}
     }
 }

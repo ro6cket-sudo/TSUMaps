@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.tsumaps.core.DigitRecognizer.TrainingScreen
+import com.example.tsumaps.ui.screens.decisionTreeScreen.DecisionTreeScreen
 import com.example.tsumaps.ui.theme.TSUMapsTheme
 
 class MainActivity : ComponentActivity() {
@@ -21,8 +22,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             TSUMapsTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    PixelDrawingScreen()
+//                    PixelDrawingScreen()
 //                    TrainingScreen()
+                    DecisionTreeScreen()
                 }
             }
         }
