@@ -1,30 +1,13 @@
-package com.example.tsumaps.core.algorithms
+package com.example.tsumaps.core.algorithms.astar
 
 import com.example.tsumaps.core.MapConstants
 import com.example.tsumaps.core.Point
-import com.example.tsumaps.core.algorithms.heuristic.Heuristic
-import com.example.tsumaps.core.algorithms.heuristic.ChebyshevHeuristic
-import com.example.tsumaps.core.algorithms.heuristic.ManhattanHeuristic
-import com.example.tsumaps.core.algorithms.heuristic.OctileHeuristic
+import com.example.tsumaps.core.algorithms.astar.heuristic.Heuristic
+import com.example.tsumaps.core.algorithms.astar.heuristic.OctileHeuristic
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import java.util.PriorityQueue
-
-
-sealed class PathfindingEvent {
-    data class NodeClosed(val point: Point) : PathfindingEvent()
-    data class NodesOpened(val points: List<Point>) : PathfindingEvent()
-    data class PathFound(val path: List<Point>?) : PathfindingEvent()
-}
-
-interface PathFinder {
-    fun setBaseMap(walkableMap: BooleanArray)
-    fun setObstacles(obstacles: List<Point>)
-    fun clearDynamicObstacles()
-    fun findPath(start: Point, end: Point) : List<Point>?
-    fun findPathAnimated(start: Point, end: Point, delayMs: Long = 50L) : Flow<PathfindingEvent>
-}
 
 
 class AStarFinder (

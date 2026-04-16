@@ -1,16 +1,21 @@
-package com.example.tsumaps.core.algorithms
+package com.example.tsumaps.core.algorithms.genetic
 
 import com.example.tsumaps.core.FoodItem
 import com.example.tsumaps.core.Place
-import com.example.tsumaps.core.algorithms.genetic.GeneticEvent
-import com.example.tsumaps.core.algorithms.genetic.GeneticOptimizer
+import com.example.tsumaps.core.algorithms.genetic.crossover.Crossover
+import com.example.tsumaps.core.algorithms.genetic.crossover.OrderCrossover
+import com.example.tsumaps.core.algorithms.genetic.mutation.Mutation
+import com.example.tsumaps.core.algorithms.genetic.mutation.SwapMutation
+import com.example.tsumaps.core.algorithms.genetic.selections.LinearRankSelection
+import com.example.tsumaps.core.algorithms.genetic.selections.ProbTournamentSelection
+import com.example.tsumaps.core.algorithms.genetic.selections.Selection
+import com.example.tsumaps.core.algorithms.genetic.selections.TournamentSelection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
-import kotlin.math.min
 import kotlin.random.Random
 
 class Genetic(
@@ -20,7 +25,10 @@ class Genetic(
     private val eliteCount: Int = 5,
     private val tournamentSize: Int = 5,
     private val convergenceLimit: Int = 80,
-    private val cellSize: Float = 2f
+    private val cellSize: Float = 2f,
+    private val mutation: Mutation = SwapMutation(),
+    private val crossover: Crossover = OrderCrossover(),
+    private val selection: Selection = TournamentSelection()
 ) : GeneticOptimizer {
     private val speedMetersPerMinute = 5000f / 60f
     private val minutesPerCell = cellSize / speedMetersPerMinute
@@ -38,7 +46,8 @@ class Genetic(
 
         val relevantPlaces = relevantIndices.map { places[it] }
         val relevantDistMatrix = buildRelevantMatrix(distanceMatrix, relevantIndices)
-        val relevantStartDist = IntArray(relevantIndices.size) { i -> startDistances[relevantIndices[i]] }
+        val relevantStartDist =
+            IntArray(relevantIndices.size) { i -> startDistances[relevantIndices[i]] }
 
 
         if (relevantPlaces.isEmpty()) {
@@ -107,11 +116,18 @@ class Genetic(
                 bestIteration = iteration
                 noImprovementCount = 0
 
-                emit(GeneticEvent.NewBestRoute(
-                    iteration = iteration,
-                    route = chromosomeToRoute(bestChromosome, relevantPlaces, menuMasks, requiredMask),
-                    totalCost = bestCost
-                ))
+                emit(
+                    GeneticEvent.NewBestRoute(
+                        iteration = iteration,
+                        route = chromosomeToRoute(
+                            bestChromosome,
+                            relevantPlaces,
+                            menuMasks,
+                            requiredMask
+                        ),
+                        totalCost = bestCost
+                    )
+                )
             } else noImprovementCount++
 
             if (noImprovementCount >= convergenceLimit) break
@@ -131,12 +147,12 @@ class Genetic(
             }
 
             for (i in eliteCount until populationSize) {
-                val parent1 = tournamentSelect(current, fitnessArr, rng)
-                val parent2 = tournamentSelect(current, fitnessArr, rng)
+                val parent1 = selection.select(current, tournamentSize, fitnessArr, rng)
+                val parent2 = selection.select(current, tournamentSize, fitnessArr, rng)
 
                 crossoverVersion++
-                orderCrossover(parent1, parent2, next[i], inChildVersion, crossoverVersion, rng)
-                if (rng.nextFloat() < mutationProb) mutate(next[i], rng)
+                crossover.cross(parent1, parent2, next[i], inChildVersion, crossoverVersion, rng)
+                if (rng.nextFloat() < mutationProb) mutation.mutate(next[i], rng)
             }
 
             val tmp = current
@@ -144,11 +160,18 @@ class Genetic(
             next = tmp
         }
 
-        emit(GeneticEvent.EvolutionFinished(
-            finalRoute = chromosomeToRoute(bestChromosome, relevantPlaces, menuMasks, requiredMask),
-            totalCost = bestCost,
-            iterations = bestIteration
-        ))
+        emit(
+            GeneticEvent.EvolutionFinished(
+                finalRoute = chromosomeToRoute(
+                    bestChromosome,
+                    relevantPlaces,
+                    menuMasks,
+                    requiredMask
+                ),
+                totalCost = bestCost,
+                iterations = bestIteration
+            )
+        )
 
     }.flowOn(Dispatchers.Default)
 
@@ -200,7 +223,7 @@ class Genetic(
             }
         }
 
-        chromosome[0] = 0
+        chromosome[0] = firstIdx
         visited[firstIdx] = true
         coveredMask = menuMasks[firstIdx]
         var lastIdx = firstIdx
@@ -218,6 +241,18 @@ class Genetic(
                 if (addNew != 0 && dist < bestDist) {
                     bestDist = dist
                     bestIdx = candidate
+                }
+            }
+
+            if (bestIdx == -1) {
+                for (candidate in 0 until n) {
+                    if (visited[candidate]) continue
+
+                    val dist = distanceMatrix[lastIdx][candidate]
+                    if (dist < bestDist) {
+                        bestDist = dist
+                        bestIdx = candidate
+                    }
                 }
             }
 
@@ -262,7 +297,7 @@ class Genetic(
             } else {
                 val minutesLeft = places[idx].closeTime - timeNowInt
                 if (minutesLeft < 30) {
-                    totalCost -= 500
+                    totalCost -= 300
                 }
             }
 
@@ -276,59 +311,6 @@ class Genetic(
         }
 
         return totalCost
-    }
-
-    private fun tournamentSelect(
-        population: Array<IntArray>,
-        fitness: IntArray,
-        rng: Random
-    ) : IntArray {
-        var bestIdx = rng.nextInt(population.size)
-        repeat(tournamentSize - 1) {
-            val candidate = rng.nextInt(population.size)
-            if (fitness[candidate] < fitness[bestIdx]) bestIdx = candidate
-        }
-        return population[bestIdx]
-    }
-
-    private fun orderCrossover( //8c in https://www.geeksforgeeks.org/dsa/genetic-algorithms/
-        parent1: IntArray,
-        parent2: IntArray,
-        destination: IntArray,
-        inChildVersion: IntArray,
-        crossoverVersion: Int,
-        rng: Random
-    ) {
-        val size = parent1.size
-
-        var start = rng.nextInt(size)
-        var end = rng.nextInt(size)
-
-        if (start > end) { val temp = start; start = end; end = temp }
-        if (start == end) end = min(size, end + 1)
-
-        for (i in start until end) {
-            destination[i] = parent1[i]
-            inChildVersion[parent1[i]] = crossoverVersion
-        }
-
-        var pos = end % size
-
-        for (gen in parent2) {
-            if (inChildVersion[gen] != crossoverVersion) {
-                destination[pos] = gen
-                inChildVersion[gen] = crossoverVersion
-                pos = (pos + 1) % size
-            }
-        }
-    }
-
-    private fun mutate(chromosome: IntArray, rng: Random) {
-        val i = rng.nextInt(chromosome.size)
-        val j = rng.nextInt(chromosome.size)
-        val tmp = chromosome[i]
-        chromosome[i] = chromosome[j]
-        chromosome[j] = tmp
     }
 
     private fun chromosomeToRoute(

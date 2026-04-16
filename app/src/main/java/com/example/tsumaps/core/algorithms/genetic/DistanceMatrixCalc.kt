@@ -2,7 +2,7 @@ package com.example.tsumaps.core.algorithms.genetic
 
 import com.example.tsumaps.core.Place
 import com.example.tsumaps.core.Point
-import com.example.tsumaps.core.algorithms.PathFinder
+import com.example.tsumaps.core.algorithms.astar.PathFinder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
