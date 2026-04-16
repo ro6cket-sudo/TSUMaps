@@ -152,7 +152,10 @@ fun TsuMapScreen(modifier: Modifier = Modifier,
                                         val mapY = (down.position.y - offset.y) / scale
                                         val gridX = (mapX / cellSize).toInt().coerceIn(0, MapConstants.GRID_WIDTH - 1)
                                         val gridY = (mapY / cellSize).toInt().coerceIn(0, MapConstants.GRID_HEIGHT - 1)
-                                        viewModel.onMapClick(Point.of(gridX, gridY))
+                                        viewModel.onPlaceTap(gridX, gridY)
+                                        if (viewModel.selectedPlace == null) {
+                                            viewModel.onMapClick(Point.of(gridX, gridY))
+                                        }
                                     }
                                 }
                             }

@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import kotlin.math.sqrt
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 
 class MapViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -56,6 +57,10 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     fun clearToast() { toastMessage = null }
     init {
         loadMapData()
+    }
+
+    fun clearSelectedPlace() {
+        selectedPlace = null
     }
 
     private fun loadMapData() {
@@ -167,6 +172,24 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun buildPath() {
+        val start = startPoint
+        val end = endPoint
+
+        if (start != null && end != null) {
+            viewModelScope.launch(Dispatchers.Default) {
+                isSearching = true
+
+                val path = pathFinder.findPath(start, end)
+
+                withContext(Dispatchers.Main) {
+                    calculatedPath = path ?: emptyList()
+                    isSearching = false
+                }
+            }
+        }
+    }
+
     private fun findNearestRoad(startX: Int, startY: Int, radius: Int, grid: BooleanArray): Point? {
         if (grid[startY * MapConstants.GRID_WIDTH + startX]) return Point.of(startX, startY)
 
@@ -226,5 +249,22 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             clusteredPlaces = Clustering.kMeans(PlaceStorage.places, 5)
             isClusteringActive = true
         }
+    }
+
+    fun onPlaceTap(gridX: Int, gridY: Int) {
+        val tapRadius = 10
+        var bestPlace: Place? = null
+        var bestDict = Double.MAX_VALUE
+        for (place in PlaceStorage.places) {
+            val (px, py) = MapConstants.latLonToGrid(place.lat, place.lon)
+            val dX = (gridX -px).toDouble()
+            val dY = (gridY -py).toDouble()
+            val dist = sqrt(dX*dX + dY*dY)
+            if (dist < tapRadius && dist < bestDict) {
+                bestDict = dist
+                bestPlace = place
+            }
+        }
+        selectedPlace = bestPlace
     }
 }

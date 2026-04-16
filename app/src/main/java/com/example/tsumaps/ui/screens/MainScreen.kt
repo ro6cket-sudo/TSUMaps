@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,7 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import com.example.tsumaps.TsuMapScreen
+import com.example.tsumaps.core.Place
+import com.example.tsumaps.core.PlaceType
 import com.example.tsumaps.ui.theme.TsuBlue
 import com.example.tsumaps.ui.viewmodels.MapViewModel
 
@@ -59,6 +64,16 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
             TsuMapScreen(modifier = Modifier.padding(innerPadding),
                 startPoint = viewModel.startPoint,
                 endPoint = viewModel.endPoint)
+
+            viewModel.selectedPlace?.let { place ->
+                PlaceInfoCard(
+                    place = place,
+                    onDismiss = {viewModel.clearSelectedPlace()},
+                    modifier = Modifier
+                        .align (Alignment.TopCenter)
+                        .padding(top = 48.dp, start = 16.dp, end = 16.dp)
+                )
+            }
         }
     }
 }
@@ -146,5 +161,55 @@ fun ActionButton(
         )
     ) {
         Text(text)
+    }
+}
+
+@Composable
+fun PlaceInfoCard(place: Place, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = place.name,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                TextButton(onClick = onDismiss) {
+                    Text("x", color = Color.Black,fontWeight = FontWeight.Bold)
+                }
+            }
+            Text(
+                text = place.description,
+                fontSize = 14.sp,
+                color = Color.DarkGray
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = when (place.type) {
+                    PlaceType.FOOD -> "Кафе / Ресторан"
+                    PlaceType.FOOD_SHOP -> "Магазин продуктов"
+                    PlaceType.UNIVERSITY_BUILDING -> "Корпус университета" },
+                fontSize = 13.sp,
+                color = TsuBlue,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "${place.openTime} - ${place.closeTime}",
+                fontSize = 13.sp,
+                color = Color.Gray
+            )
+
+        }
     }
 }

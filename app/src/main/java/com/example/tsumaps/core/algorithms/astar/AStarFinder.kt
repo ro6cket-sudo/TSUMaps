@@ -112,6 +112,7 @@ class AStarFinder (
         }
 
         iteration += 2
+        var iterCount = 0
 
         val openSet = PriorityQueue<Int> { a, b ->
             val fA = gCost[a] + heuristic.calc(Point.of(a % width, a / width), end)
@@ -153,7 +154,11 @@ class AStarFinder (
                     val ny = cy + dy
                     val nIdx = ny * width + nx
 
-                    if (!isValid(nx, ny) || !walkableGrid[nIdx] || nodeState[nIdx] == iteration + 1) continue
+                    if (!isValid(
+                            nx,
+                            ny
+                        ) || !walkableGrid[nIdx] || nodeState[nIdx] == iteration + 1
+                    ) continue
 
                     val stepCost = if (dx != 0 && dy != 0) 14 else 10
                     val newGCost = gCost[currIdx] + stepCost
@@ -175,7 +180,9 @@ class AStarFinder (
             if (newOpened.isNotEmpty()) {
                 emit(PathfindingEvent.NodesOpened(newOpened))
             }
-            delay(delayMs)
+
+            //if (iterCount++ % iterSkip == 0)
+               // delay(delayMs)
         }
         emit(PathfindingEvent.PathFound(null))
     }
