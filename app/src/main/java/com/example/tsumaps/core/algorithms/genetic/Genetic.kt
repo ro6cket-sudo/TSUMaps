@@ -295,7 +295,7 @@ class Genetic(
             if (!places[idx].isOpen(timeNowInt)) {
                 totalCost += 100000
             } else {
-                val minutesLeft = places[idx].closeTime - timeNowInt
+                val minutesLeft = places[idx].minutesUntilClose ( timeNowInt)
                 if (minutesLeft < 30) {
                     totalCost -= 300
                 }

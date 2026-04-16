@@ -18,11 +18,11 @@ data class Place(
     val description: String,
     val lat: Double,
     val lon: Double,
-    val point: Point,
     val type: PlaceType,
-    val menu: Set<FoodItem>,
     val openTime: String,
     val closeTime: String,
+    val point: Point = Point.of(0,0),
+    val menu: Set<FoodItem> = emptySet()
 ) {
     val openTimeInt: Int = openTime.toMinutes()
     val closeTimeInt: Int = closeTime.toMinutes()

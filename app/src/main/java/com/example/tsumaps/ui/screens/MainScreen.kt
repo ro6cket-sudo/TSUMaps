@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.*
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tsumaps.TsuMapScreen
 import com.example.tsumaps.ui.theme.TsuBlue
 import com.example.tsumaps.ui.viewmodels.MapViewModel
@@ -41,11 +40,11 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
         sheetContent = {BottomSheetContent(
             onBuildPathClick = { viewModel.onBuildPathClick() },
             isSearching = viewModel.isSearching,
-            isSelectionMode = viewModel.isSelectionMode,
             onSelectionModeClick = { viewModel.toggleSelectionMode() },
-            isObstacleMode = viewModel.isObstacleMode,
             onObstacleClick = { viewModel.toggleObstacleMode() },
-            onClearObstaclesClick = {viewModel.clearObstacles()}
+            onClearObstaclesClick = {viewModel.clearObstacles()} ,
+            isClusteringActive = viewModel.isClusteringActive,
+            onClusteringClick = { viewModel.toggleClustering() }
         )},
         sheetPeekHeight = 160.dp,
         sheetShape = RoundedCornerShape(topStart = 50.dp, topEnd = 50.dp),
@@ -65,9 +64,10 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
 }
 
 @Composable
-fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit, isSelectionMode: Boolean,
-                       onSelectionModeClick: () -> Unit, isObstacleMode: Boolean, onObstacleClick: () -> Unit,
-                       onClearObstaclesClick: () -> Unit) {
+fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit,
+                       onSelectionModeClick: () -> Unit, onObstacleClick: () -> Unit,
+                       onClearObstaclesClick: () -> Unit, isClusteringActive: Boolean,
+                       onClusteringClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -112,6 +112,18 @@ fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit, isSel
                 contentColor = Color.White,
                 modifier = Modifier.weight(0.4f),
                 onClick = onClearObstaclesClick
+            )
+        }
+        Row(
+            modifier = Modifier,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ActionButton(
+                text = if (isClusteringActive) "Скрыть кластеры" else "Кластеризация",
+                containerColor = if (isClusteringActive) Color.Green else TsuBlue,
+                contentColor = Color.White,
+                modifier = Modifier.weight(0.4f),
+                onClick = onClusteringClick
             )
         }
     }

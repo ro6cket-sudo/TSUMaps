@@ -216,12 +216,27 @@ fun TsuMapScreen(modifier: Modifier = Modifier,
                     }
                 }
 
-                viewModel.visiblePlaces.forEach { place ->
-                    val (gridX, gridY) = MapConstants.latLonToGrid(place.lat, place.lon)
-                    val cx = gridX * cellSize
-                    val cy = gridY * cellSize
-                    drawCircle(Color.White, radius = 5f, center = Offset(cx, cy))
-                    drawCircle(Color.Cyan, radius = 3f, center = Offset(cx, cy))
+                if (viewModel.isClusteringActive) {
+                    val clusterColors = listOf(
+                        Color.Red, Color.Yellow, Color.Green, Color.Magenta, Color.Cyan
+                    )
+
+                    viewModel.clusteredPlaces.forEach { cp ->
+                        val (gridX, gridY) = MapConstants.latLonToGrid(cp.place.lat, cp.place.lon)
+                        val cx = gridX * cellSize
+                        val cy = gridY * cellSize
+                        val color = clusterColors[cp.clusterIndex % clusterColors.size]
+                        drawCircle(Color.White, radius = 5f, center = Offset(cx, cy))
+                        drawCircle(color, radius = 3f, center = Offset(cx, cy))
+                    }
+                } else {
+                    viewModel.visiblePlaces.forEach { place ->
+                        val (gridX, gridY) = MapConstants.latLonToGrid(place.lat, place.lon)
+                        val cx = gridX * cellSize
+                        val cy = gridY * cellSize
+                        drawCircle(Color.White, radius = 5f, center = Offset(cx, cy))
+                        drawCircle(Color.Cyan, radius = 3f, center = Offset(cx, cy))
+                    }
                 }
             }
 

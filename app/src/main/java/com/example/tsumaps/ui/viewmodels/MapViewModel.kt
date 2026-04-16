@@ -11,8 +11,10 @@ import com.example.tsumaps.core.MapConstants
 import com.example.tsumaps.core.Place
 import com.example.tsumaps.core.PlaceStorage
 import com.example.tsumaps.core.Point
-import com.example.tsumaps.core.algorithms.AStarFinder
-import com.example.tsumaps.core.algorithms.PathfindingEvent
+import com.example.tsumaps.core.algorithms.astar.AStarFinder
+import com.example.tsumaps.core.algorithms.astar.PathfindingEvent
+import com.example.tsumaps.core.algorithms.cluster.ClusteredPlace
+import com.example.tsumaps.core.algorithms.cluster.Clustering
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -38,6 +40,19 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     var isObstacleMode by mutableStateOf(false)
     val customObstacles = mutableStateListOf<Point>()
     private var pathfindingJob: Job? = null
+
+    val visiblePlaces: List<Place>
+        get() = PlaceStorage.places
+
+    var selectedPlace by  mutableStateOf<Place?>(null)
+        private set
+
+    var clusteredPlaces by mutableStateOf<List<ClusteredPlace>>(emptyList())
+        private set
+
+    var isClusteringActive by mutableStateOf(false)
+        private set
+
     fun clearToast() { toastMessage = null }
     init {
         loadMapData()
@@ -203,7 +218,13 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    val visiblePlaces: List<Place>
-        get() = PlaceStorage.places
-
+    fun toggleClustering() {
+        if (isClusteringActive) {
+            clusteredPlaces = emptyList()
+            isClusteringActive = false
+        } else {
+            clusteredPlaces = Clustering.kMeans(PlaceStorage.places, 5)
+            isClusteringActive = true
+        }
+    }
 }
