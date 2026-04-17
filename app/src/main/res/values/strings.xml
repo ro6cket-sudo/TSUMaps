@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">TSUMaps</string>
+    <string name="input_title_AI">Интелектуальный ввод</string>
+    <string name="input_subtitle_AI">Поставьте оценку от 0 до 9</string>
+    <string name="input_hint_AI">Рисуйте крупно в центре рамки</string>
+    <string name="ai_sees">НЕЙРОСЕТЬ ВИДЕТ</string>
+    <string name="btn_clear_AI">ОЧИСТИТЬ ХОЛСТ</string>
+    <string name="status_drawing_AI">Нарисуйте цифру…</string>
 </resources>

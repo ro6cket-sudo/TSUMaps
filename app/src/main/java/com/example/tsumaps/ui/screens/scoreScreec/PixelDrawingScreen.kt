@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -77,21 +78,21 @@ fun PixelDrawingScreen() {
         Spacer(modifier = Modifier.height(40.dp))
 
         Text(
-            text = "Интелектуальный ввод",
+            text = stringResource(id = R.string.input_title_AI),
             fontSize = 24.sp,
             fontWeight = FontWeight.ExtraBold,
             color = TsuBlue
         )
 
         Text(
-            text = "Поставьте оценку от 0 до 9",
+            text = stringResource(id = R.string.input_subtitle_AI),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = TsuBlue
         )
 
         Text(
-            text = "Рисуйте крупно в центре рамки",
+            text = stringResource(id = R.string.input_hint_AI),
             fontSize = 16.sp,
             color = TsuLightBlue
         )
@@ -191,7 +192,7 @@ fun PixelDrawingScreen() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "НЕЙРОСЕТЬ ВИДИТ:",
+                    stringResource(id = R.string.ai_sees),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Gray,
@@ -225,7 +226,7 @@ fun PixelDrawingScreen() {
                 .height(55.dp)
         ) {
             Text(
-                "ОЧИСТИТЬ ХОЛСТ",
+                stringResource(id = R.string.btn_clear_AI),
                 fontWeight = FontWeight.Bold
             )
         }
