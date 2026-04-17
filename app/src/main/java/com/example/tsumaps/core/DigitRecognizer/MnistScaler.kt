@@ -3,13 +3,13 @@ package com.example.tsumaps.core.DigitRecognizer
 fun scale(original: List<List<Int>>, newWidth: Int, newHeight: Int): List<List<Int>> {
     val oldHeight = original.size
     val oldWidth = original[0].size
-    val scaled = MutableList(newHeight) { MutableList(newWidth) {0} }
+    val scaled = MutableList(newHeight) { MutableList(newWidth) { 0 } }
 
     val scaleWidth = (oldWidth - 1).toFloat() / (newWidth - 1)
     val scaleHeight = (oldHeight - 1).toFloat() / (newHeight - 1)
 
-    for (y in 0 until newHeight){
-        for (x in 0 until newWidth){
+    for (y in 0 until newHeight) {
+        for (x in 0 until newWidth) {
             val scaledX = (x * scaleWidth)
             val scaledY = (y * scaleHeight)
 
@@ -25,7 +25,7 @@ fun scale(original: List<List<Int>>, newWidth: Int, newHeight: Int): List<List<I
                     dx * (1 - dy) * original[y1][x2] +
                     (1 - dx) * dy * original[y2][x1] +
                     dx * dy * original[y2][x2]
-            scaled[y][x] =  if (newPixel >= 0.5) 1 else 0
+            scaled[y][x] = if (newPixel >= 0.5) 1 else 0
         }
     }
     return scaled

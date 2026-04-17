@@ -16,14 +16,14 @@ import androidx.compose.material3.Text
 import kotlinx.coroutines.launch
 
 @Composable
-public fun TrainingScreen(){
+public fun TrainingScreen() {
     val context = LocalContext.current
     val coroutineSpace = rememberCoroutineScope()
     var isTraining by remember { mutableStateOf(false) }
-    Column(modifier = Modifier.fillMaxSize()){
+    Column(modifier = Modifier.fillMaxSize()) {
         Button(
             onClick = {
-                if (!isTraining){
+                if (!isTraining) {
                     isTraining = true
                     coroutineSpace.launch {
                         coach(context)

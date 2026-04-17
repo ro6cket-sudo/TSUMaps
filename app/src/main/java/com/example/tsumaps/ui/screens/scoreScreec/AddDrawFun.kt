@@ -12,9 +12,9 @@ fun addDraw(
     gridSize: Int,
     grid: MutableList<MutableList<Int>>,
     canvasSize: Int
-){
+) {
     val cellSize = canvasSize.toFloat() / gridSize
-    val dist = max(abs(x1 - x0), abs(y1- y0))
+    val dist = max(abs(x1 - x0), abs(y1 - y0))
     val steps = (dist / (cellSize / 4)).toInt()
 
     if (steps == 0) {
@@ -22,7 +22,7 @@ fun addDraw(
         return
     }
 
-    for (i in 0..steps){
+    for (i in 0..steps) {
         val a = i.toFloat() / steps
         val x = x0 + (x1 - x0) * a
         val y = y0 + (y1 - y0) * a

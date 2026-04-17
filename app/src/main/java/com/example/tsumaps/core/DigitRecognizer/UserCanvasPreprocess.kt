@@ -33,7 +33,7 @@ fun preprocessCanvas(grid: List<List<Int>>): List<List<Int>> {
     val scaledDigit = scale(croppedDigit, 40, 40)
 
     val finalGrid = MutableList(Y) { MutableList(50) { 0 } }
-    for (y in 0 until 40){
+    for (y in 0 until 40) {
         for (x in 0 until 40) {
             finalGrid[y + 5][x + 5] = scaledDigit[y][x]
         }

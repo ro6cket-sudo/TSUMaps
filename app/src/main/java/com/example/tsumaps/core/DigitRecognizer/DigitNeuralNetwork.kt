@@ -21,8 +21,8 @@ open class DigitNeuralNetwork(context: Context) {
         loadWeightsFromJson(context)
     }
 
-    fun loadWeightsFromJson(context: Context){
-        try{
+    fun loadWeightsFromJson(context: Context) {
+        try {
             val jsonString =
                 context.assets.open("weights_new.json").bufferedReader().use { it.readText() }
             val json = JSONObject(jsonString)
@@ -52,26 +52,29 @@ open class DigitNeuralNetwork(context: Context) {
             for (i in 0 until OUTPUT_SIZE) {
                 b2[i] = b2json.getDouble(i).toFloat()
             }
-        }catch (error: Exception){
-            android.util.Log.w("AI", "Старые веса не подходят по размеру или отсутвуют. Начинаем с чистого листа!")
+        } catch (error: Exception) {
+            android.util.Log.w(
+                "AI",
+                "Старые веса не подходят по размеру или отсутвуют. Начинаем с чистого листа!"
+            )
         }
     }
 
-    private fun relu(x: Float) : Float = max(0f, x)
+    private fun relu(x: Float): Float = max(0f, x)
     protected fun reluDifferential(x: Float) = if (x > 0) 1f else 0f
 
     private fun softmax(input: FloatArray): FloatArray {
         val maxVal = input.maxOrNull() ?: 0f
-        val e = FloatArray(input.size) { exp(input[it] - maxVal)}
+        val e = FloatArray(input.size) { exp(input[it] - maxVal) }
         val sum = e.sum()
-        return FloatArray(input.size) {e[it] / sum}
+        return FloatArray(input.size) { e[it] / sum }
     }
 
-    fun claccify(grid: List<List<Int>>): Int{
+    fun claccify(grid: List<List<Int>>): Int {
         val centeredGrid = preprocessCanvas(grid)
         val input = FloatArray(INPUT_SIZE)
-        for (y in 0 until 50){
-            for ( x in 0 until 50){
+        for (y in 0 until 50) {
+            for (x in 0 until 50) {
                 input[y * 50 + x] = centeredGrid[x][y].toFloat()
             }
         }
@@ -81,17 +84,17 @@ open class DigitNeuralNetwork(context: Context) {
 
     protected fun NeuralNetwork(input: FloatArray): Pair<FloatArray, FloatArray> {
         val hidden = FloatArray(HIDDEN_SIZE)
-        for (j in 0 until HIDDEN_SIZE){
+        for (j in 0 until HIDDEN_SIZE) {
             var sum = b1[j]
-            for (i in 0 until INPUT_SIZE){
+            for (i in 0 until INPUT_SIZE) {
                 sum += input[i] * w1[i][j]
             }
             hidden[j] = relu(sum)
         }
         val outputRow = FloatArray(OUTPUT_SIZE)
-        for (j in 0 until OUTPUT_SIZE){
+        for (j in 0 until OUTPUT_SIZE) {
             var sum = b2[j]
-            for (i in  0 until HIDDEN_SIZE) {
+            for (i in 0 until HIDDEN_SIZE) {
                 sum += hidden[i] * w2[i][j]
             }
             outputRow[j] = sum
