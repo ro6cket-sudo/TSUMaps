@@ -2,13 +2,13 @@ package com.example.tsumaps.ui.viewmodels
 
 import android.app.Application
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.tsumaps.core.FoodItem
 import com.example.tsumaps.core.MapConstants
 import com.example.tsumaps.core.Place
 import com.example.tsumaps.core.PlaceStorage
@@ -17,16 +17,19 @@ import com.example.tsumaps.core.algorithms.astar.AStarFinder
 import com.example.tsumaps.core.algorithms.astar.PathfindingEvent
 import com.example.tsumaps.core.algorithms.cluster.ClusterMetricType
 import com.example.tsumaps.core.algorithms.cluster.ClusteredPlace
-import com.example.tsumaps.core.algorithms.cluster.Clustering
 import com.example.tsumaps.core.algorithms.cluster.EuclideanMetric
 import com.example.tsumaps.core.algorithms.cluster.KMedoids
 import com.example.tsumaps.core.algorithms.cluster.ManhattanMetric
 import com.example.tsumaps.core.algorithms.cluster.PathDistanceMetric
+import com.example.tsumaps.core.algorithms.genetic.DistanceMatrixCalc
+import com.example.tsumaps.core.algorithms.genetic.Genetic
+import com.example.tsumaps.core.algorithms.genetic.GeneticEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.sqrt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 
 class MapViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -158,6 +161,18 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             }
             return
         }
+
+        if (isGeneticSelectionMode) {
+            val nearestRoad = findNearestRoad(point.x, point.y, 5, grid) ?: run {
+                toastMessage = "Здесь нет прохода!"
+                return
+            }
+            geneticStartPoint = nearestRoad
+            isGeneticSelectionMode = false
+            toastMessage = "Начальная точка маршрута установлена"
+            return
+        }
+
 
         if (!isSelectionMode) return
 
@@ -298,10 +313,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             val metric = when (selectedMetric) {
                 ClusterMetricType.EUCLIDEAN -> EuclideanMetric()
                 ClusterMetricType.MANHATTAN -> ManhattanMetric()
-                ClusterMetricType.PEDESTRIAN -> {
-                    val total = PlaceStorage.places.size * (PlaceStorage.places.size - 1) / 2
-                    pathDistanceMetric
-                }
+                ClusterMetricType.PEDESTRIAN -> { pathDistanceMetric }
             }
 
             val result = KMedoids.cluster(PlaceStorage.places, clusterCount, metric)
@@ -371,5 +383,120 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         selectedMetric = type
         clusteredPlaces = emptyList()
         isClusteringActive = false
+    }
+
+    var selectedFoodItems by mutableStateOf<Set<FoodItem>>(FoodItem.entries.toSet())
+        private set
+    var geneticStartPoint by mutableStateOf<Point?>(null)
+        private set
+    var isGeneticSelectionMode by mutableStateOf(false)
+        private set
+    var isGeneticRunning by mutableStateOf(false)
+        private set
+    val geneticRoute = mutableStateListOf<Place>()
+    val geneticPathSegments = mutableStateListOf<List<Point>>()
+    var geneticIteration by mutableIntStateOf(0)
+        private set
+    var geneticCost by mutableIntStateOf(0)
+        private set
+
+    fun toggleFoodItem(item: FoodItem) {
+        selectedFoodItems = if (item in selectedFoodItems)
+            selectedFoodItems - item else selectedFoodItems + item
+    }
+
+    fun selectAllFoodItems() {
+        selectedFoodItems = FoodItem.entries.toSet()
+    }
+
+    fun clearAllFoodItems() {
+        selectedFoodItems = emptySet()
+    }
+
+    fun startGeneticSelection() {
+        isGeneticSelectionMode = true
+        geneticStartPoint = null
+    }
+
+    fun clearGenetic() {
+        geneticRoute.clear()
+        geneticPathSegments.clear()
+        geneticIteration = 0
+        geneticCost = 0
+        geneticStartPoint = null
+        isGeneticSelectionMode = false
+    }
+
+    fun runGenetic() {
+        val start = geneticStartPoint ?: run {
+            toastMessage = "Сначала установите начальную точку"
+            return
+        }
+        if (selectedFoodItems.isEmpty()) {
+            toastMessage = "Выберите хотя бы одну категорию"
+            return
+        }
+        val grid = mapGrid ?: run {
+            toastMessage = "Карта ещё не загружена"
+            return
+        }
+        viewModelScope.launch {
+            isGeneticRunning = true
+            geneticRoute.clear()
+            geneticPathSegments.clear()
+
+            val places = withContext(Dispatchers.Default) {
+                PlaceStorage.places.map { place ->
+                    val snapped = findNearestRoad(place.point.x, place.point.y, 10, grid)
+                        ?: place.point
+                    place.copy(point = snapped)
+                }
+            }
+
+            toastMessage = "Вычисление матрицы расстояний..."
+            val calc = DistanceMatrixCalc { AStarFinder().apply { setBaseMap(grid) } }
+            val (matrix, startDists) = calc.calculateMatrix(places, start)
+
+            toastMessage = "Запуск генетического алгоритма..."
+            val cal = Calendar.getInstance()
+            val currentTime = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+
+            Genetic().findOptimalRoute(places, selectedFoodItems, currentTime, matrix, startDists)
+                .collect { event ->
+                    when (event) {
+                        is GeneticEvent.NewBestRoute -> Unit
+                        is GeneticEvent.EvolutionFinished -> {
+                            geneticRoute.clear()
+                            geneticRoute.addAll(event.finalRoute)
+                            geneticIteration = event.iterations
+                            geneticCost = event.totalCost
+                            computeGeneticPathSegments(start, event.finalRoute)
+                            toastMessage = "Маршрут найден за ${event.iterations} итераций"
+                        }
+                        is GeneticEvent.NoSolutionFound -> {
+                            toastMessage = "Маршрут не найден: нет подходящих открытых мест"
+                        }
+                    }
+                }
+
+            isGeneticRunning = false
+        }
+    }
+
+    private suspend fun computeGeneticPathSegments(start: Point, route: List<Place>) {
+        val grid = mapGrid ?: return
+        val segments = withContext(Dispatchers.Default) {
+            val result = mutableListOf<List<Point>>()
+            val localFinder = AStarFinder().apply { setBaseMap(grid) }
+            var from = start
+            for (place in route) {
+                val path = localFinder.findPath(from, place.point)
+                if (path != null) result.add(path)
+                from = place.point
+            }
+            result
+        }
+        geneticPathSegments.clear()
+        geneticPathSegments.addAll(segments)
     }
 }

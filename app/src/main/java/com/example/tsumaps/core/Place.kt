@@ -1,8 +1,5 @@
 package com.example.tsumaps.core
 
-import com.example.tsumaps.core.PlaceType
-import kotlin.uuid.Uuid
-
 private fun String.toMinutes(): Int {
     val parts = this.split(":")
     if (parts.size != 2) return 0
@@ -26,9 +23,18 @@ data class Place(
 ) {
     val openTimeInt: Int = openTime.toMinutes()
     val closeTimeInt: Int = closeTime.toMinutes()
+    private val isOvernight: Boolean = closeTimeInt < openTimeInt
 
-    fun minutesUntilClose(currentTime: Int): Int = closeTimeInt - currentTime
-
+    fun minutesUntilClose(currentTime: Int): Int =
+        if (isOvernight && currentTime >= openTimeInt) {
+            closeTimeInt + 1440 - currentTime
+        } else {
+            closeTimeInt - currentTime
+        }
     fun isOpen(currentTime: Int): Boolean =
-        currentTime in openTimeInt until closeTimeInt
+        if (isOvernight) {
+            currentTime >= openTimeInt || currentTime < closeTimeInt
+        } else {
+            currentTime in openTimeInt until closeTimeInt
+        }
 }

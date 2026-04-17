@@ -249,6 +249,37 @@ fun TsuMapScreen(
                     }
                 }
 
+                viewModel.geneticPathSegments.forEach { segment ->
+                    segment.forEach { pt ->
+                        drawRect(
+                            color = Color(0xCCFF6F00),
+                            topLeft = Offset(pt.x * cellSize, pt.y * cellSize),
+                            size = Size(cellSize, cellSize)
+                        )
+                    }
+                }
+
+                viewModel.geneticStartPoint?.let { pt ->
+                    drawCircle(
+                        Color(0xFFFF6F00),
+                        radius = 14f,
+                        center = Offset(pt.x * cellSize, pt.y * cellSize)
+                    )
+                    drawCircle(
+                        Color.White,
+                        radius = 8f,
+                        center = Offset(pt.x * cellSize, pt.y * cellSize)
+                    )
+                }
+
+                viewModel.geneticRoute.forEach { place ->
+                    val (gx, gy) = MapConstants.latLonToGrid(place.lat, place.lon)
+                    val cx = gx * cellSize
+                    val cy = gy * cellSize
+                    drawCircle(Color.White, radius = 11f, center = Offset(cx, cy))
+                    drawCircle(Color(0xFFFF6F00), radius = 8f, center = Offset(cx, cy))
+                }
+
                 if (viewModel.isClusteringActive) {
                     val clusterColors = listOf(
                         Color.Red, Color(0xFF8BC34A), Color.Green, Color.Magenta, Color.Cyan,

@@ -4,19 +4,38 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,21 +43,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tsumaps.TsuMapScreen
+import com.example.tsumaps.core.FoodItem
 import com.example.tsumaps.core.Place
 import com.example.tsumaps.core.PlaceType
+import com.example.tsumaps.core.Point
+import com.example.tsumaps.core.algorithms.cluster.ClusterMetricType
 import com.example.tsumaps.ui.theme.TsuBlue
 import com.example.tsumaps.ui.viewmodels.MapViewModel
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.text.style.TextAlign
-import com.example.tsumaps.core.algorithms.cluster.ClusterMetricType
 
-enum class SheetMode { PATHFINDING, CLUSTERING }
+enum class SheetMode { PATHFINDING, CLUSTERING, GENETIC }
 
 val clusterColors = listOf(
     Color.Red, Color.Yellow, Color.Green,
@@ -53,13 +72,11 @@ fun MainScreen(
 ) {
     val sheetState = rememberBottomSheetScaffoldState()
     val context = androidx.compose.ui.platform.LocalContext.current
-
     var selectedMode by remember { mutableStateOf<SheetMode?>(null) }
 
     androidx.compose.runtime.LaunchedEffect(viewModel.toastMessage) {
         viewModel.toastMessage?.let { message ->
-            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT)
-                .show()
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
             viewModel.clearToast()
         }
     }
@@ -79,12 +96,23 @@ fun MainScreen(
                 onClusteringClick = { viewModel.toggleClustering() },
                 clusterCount = viewModel.clusterCount,
                 isComputingClusters = viewModel.isComputingClusters,
-            selectedMetric = viewModel.selectedMetric,
-            onMetricChange = { viewModel.setClusterMetric(it) },
-            onIncrementCluster = { viewModel.incrementClusterCount() },
+                selectedMetric = viewModel.selectedMetric,
+                onMetricChange = { viewModel.setClusterMetric(it) },
+                onIncrementCluster = { viewModel.incrementClusterCount() },
                 onDecrementCluster = { viewModel.decrementClusterCount() },
                 onClearPathClick = { viewModel.clearPath() },
-                onBuildFinalPathClick = { viewModel.buildPath() }
+                onBuildFinalPathClick = { viewModel.buildPath() },
+                isGeneticRunning = viewModel.isGeneticRunning,
+                geneticStartPoint = viewModel.geneticStartPoint,
+                selectedFoodItems = viewModel.selectedFoodItems,
+                onFoodItemToggle = { viewModel.toggleFoodItem(it) },
+                onSelectAllFoodItems = { viewModel.selectAllFoodItems() },
+                onClearAllFoodItems = { viewModel.clearAllFoodItems() },
+                onGeneticStartClick = { viewModel.startGeneticSelection() },
+                onRunGeneticClick = { viewModel.runGenetic() },
+                onClearGeneticClick = { viewModel.clearGenetic() },
+                geneticIteration = viewModel.geneticIteration,
+                geneticCost = viewModel.geneticCost
             )
         },
         sheetPeekHeight = 160.dp,
@@ -103,16 +131,6 @@ fun MainScreen(
                 endPoint = viewModel.endPoint,
                 isPathfindingMode = selectedMode == SheetMode.PATHFINDING
             )
-
-            if (viewModel.isClusteringActive && viewModel.clusteredPlaces.isNotEmpty()) {
-                ClusterLegend(
-                    metricName = viewModel.selectedMetric.label,
-                    clusterCount = viewModel.clusterCount,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(start = 12.dp, bottom = 200.dp)
-                )
-            }
 
             if (viewModel.isClusteringActive && viewModel.clusteredPlaces.isNotEmpty()) {
                 ClusterLegend(
@@ -144,17 +162,33 @@ fun MainScreen(
 fun BottomSheetContent(
     selectedMode: SheetMode?,
     onModeSelected: (SheetMode?) -> Unit,
-     onBuildPathClick: () -> Unit,isSearching: Boolean,
-    onSelectionModeClick: () -> Unit, onObstacleClick: () -> Unit,
-    onClearObstaclesClick: () -> Unit, isClusteringActive: Boolean,
-    onClusteringClick: () -> Unit, clusterCount: Int, isComputingClusters: Boolean,
-                       selectedMetric: ClusterMetricType,
-                       onMetricChange: (ClusterMetricType) -> Unit,
-                       onIncrementCluster: () -> Unit,
-    onDecrementCluster: () -> Unit, onClearPathClick: () -> Unit,
-    onBuildFinalPathClick: () -> Unit
+    onBuildPathClick: () -> Unit,
+    isSearching: Boolean,
+    onSelectionModeClick: () -> Unit,
+    onObstacleClick: () -> Unit,
+    onClearObstaclesClick: () -> Unit,
+    isClusteringActive: Boolean,
+    onClusteringClick: () -> Unit,
+    clusterCount: Int,
+    isComputingClusters: Boolean,
+    selectedMetric: ClusterMetricType,
+    onMetricChange: (ClusterMetricType) -> Unit,
+    onIncrementCluster: () -> Unit,
+    onDecrementCluster: () -> Unit,
+    onClearPathClick: () -> Unit,
+    onBuildFinalPathClick: () -> Unit,
+    isGeneticRunning: Boolean,
+    geneticStartPoint: Point?,
+    selectedFoodItems: Set<FoodItem>,
+    onFoodItemToggle: (FoodItem) -> Unit,
+    onSelectAllFoodItems: () -> Unit,
+    onClearAllFoodItems: () -> Unit,
+    onGeneticStartClick: () -> Unit,
+    onRunGeneticClick: () -> Unit,
+    onClearGeneticClick: () -> Unit,
+    geneticIteration: Int,
+    geneticCost: Int
 ) {
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -165,7 +199,7 @@ fun BottomSheetContent(
     {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             ActionButton(
                 text = "A* Маршрут",
@@ -182,9 +216,14 @@ fun BottomSheetContent(
                 containerColor = if (selectedMode == SheetMode.CLUSTERING) Color(0xFF4CAF50) else TsuBlue,
                 contentColor = Color.White,
                 modifier = Modifier.weight(1f),
-                onClick = {
-                    onModeSelected(if (selectedMode == SheetMode.CLUSTERING) null else SheetMode.CLUSTERING)
-                }
+                onClick = { onModeSelected(if (selectedMode == SheetMode.CLUSTERING) null else SheetMode.CLUSTERING) }
+            )
+            ActionButton(
+                text = "Генетика",
+                containerColor = if (selectedMode == SheetMode.GENETIC) Color(0xFF4CAF50) else TsuBlue,
+                contentColor = Color.White,
+                modifier = Modifier.weight(1f),
+                onClick = { onModeSelected(if (selectedMode == SheetMode.GENETIC) null else SheetMode.GENETIC) }
             )
         }
 
@@ -205,7 +244,6 @@ fun BottomSheetContent(
                         modifier = Modifier.weight(1f),
                         onClick = onSelectionModeClick
                     )
-
                     ActionButton(
                         text = if (isSearching) "Поиск..." else "А* с анимацией",
                         containerColor = TsuBlue,
@@ -225,7 +263,6 @@ fun BottomSheetContent(
                         modifier = Modifier.weight(1f),
                         onClick = onBuildFinalPathClick
                     )
-
                     ActionButton(
                         text = "Очистить маршрут",
                         containerColor = Color(0xFFF44336),
@@ -242,18 +279,82 @@ fun BottomSheetContent(
                         text = "Добавить стены",
                         containerColor = TsuBlue,
                         contentColor = Color.White,
-                        modifier = Modifier.weight(0.4f),
+                        modifier = Modifier.weight(1f),
                         onClick = onObstacleClick
                     )
-
                     ActionButton(
                         text = "Очистить стены",
                         containerColor = Color(0xFFF44336),
                         contentColor = Color.White,
-                        modifier = Modifier.weight(0.4f),
+                        modifier = Modifier.weight(1f),
                         onClick = onClearObstaclesClick
                     )
                 }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = selectedMode == SheetMode.GENETIC,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            var showCategoryDialog by remember { mutableStateOf(false) }
+
+            if (showCategoryDialog) {
+                CategoryDialog(
+                    selectedItems = selectedFoodItems,
+                    onToggle = onFoodItemToggle,
+                    onSelectAll = onSelectAllFoodItems,
+                    onClearAll = onClearAllFoodItems,
+                    onDismiss = { showCategoryDialog = false }
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ActionButton(
+                        text = "Категории (${selectedFoodItems.size}/${FoodItem.entries.size})",
+                        containerColor = TsuBlue,
+                        contentColor = Color.White,
+                        modifier = Modifier.weight(1f),
+                        onClick = { showCategoryDialog = true }
+                    )
+                    ActionButton(
+                        text = if (geneticStartPoint != null) "Точка ✓" else "Нач. точка",
+                        containerColor = if (geneticStartPoint != null) Color(0xFF4CAF50) else TsuBlue,
+                        contentColor = Color.White,
+                        modifier = Modifier.weight(1f),
+                        onClick = onGeneticStartClick
+                    )
+                }
+                ActionButton(
+                    text = if (isGeneticRunning) "Выполняется..." else "Запустить",
+                    containerColor = TsuBlue,
+                    contentColor = Color.White,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onRunGeneticClick
+                )
+                if (isGeneticRunning) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+                if (geneticCost > 0) {
+                    Text(
+                        text = "Итерация: $geneticIteration  |  Стоимость: $geneticCost",
+                        fontSize = 12.sp,
+                        color = Color.DarkGray,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+                ActionButton(
+                    text = "Очистить маршрут",
+                    containerColor = Color(0xFFF44336),
+                    contentColor = Color.White,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onClearGeneticClick
+                )
             }
         }
 
@@ -263,10 +364,16 @@ fun BottomSheetContent(
             exit = shrinkVertically()
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Метрика расстояния:", fontSize = 13.sp, color = Color.DarkGray,
-                    modifier = Modifier.align(Alignment.Start))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Метрика расстояния:",
+                    fontSize = 13.sp,
+                    color = Color.DarkGray,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     ClusterMetricType.entries.forEach { metric ->
                         val selected = selectedMetric == metric
                         Button(
@@ -275,61 +382,59 @@ fun BottomSheetContent(
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (selected) Color(0xFF1565C0) else Color(0xFFE0E0E0),
-                                    contentColor = if (selected) Color.White else Color.Black)
-                            ) {
-                                Text(
-                                    metric.label,
-                                    fontSize = 12.sp,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-                                ) }
-                            }
-                        }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Количество кластеров: ",
-                            fontSize = 14.sp,
-                            color = Color.Black
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        OutlinedButton(
-                            onClick = onDecrementCluster,
-                            modifier = Modifier.size(36.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(0.dp)
+                                contentColor = if (selected) Color.White else Color.Black
+                            )
                         ) {
-                            Text("-", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Text(
-                            text = "$clusterCount",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.width(36.dp),
-                            textAlign = TextAlign.Center
-                        )
-                        OutlinedButton(
-                            onClick = onIncrementCluster,
-                            modifier = Modifier.size(36.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Text("+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = metric.label,
+                                fontSize = 12.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                            )
                         }
                     }
-                    ActionButton(
-                        text = when {
-                            isComputingClusters -> "Вычисление..."
-                            isClusteringActive -> "Скрыть кластеры"
-                            else -> "Применить (${selectedMetric.label})"
-                        },
-                        containerColor = if (isClusteringActive) Color(0xFF4CAF50) else TsuBlue,
-                        contentColor = Color.White,
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = onClusteringClick
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "Количество кластеров:", fontSize = 14.sp, color = Color.Black)
+                    Spacer(modifier = Modifier.weight(1f))
+                    OutlinedButton(
+                        onClick = onDecrementCluster,
+                        modifier = Modifier.size(36.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text("-", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Text(
+                        text = "$clusterCount",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.width(36.dp),
+                        textAlign = TextAlign.Center
                     )
+                    OutlinedButton(
+                        onClick = onIncrementCluster,
+                        modifier = Modifier.size(36.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text("+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                ActionButton(
+                    text = when {
+                        isComputingClusters -> "Вычисление..."
+                        isClusteringActive -> "Скрыть кластеры"
+                        else -> "Применить (${selectedMetric.label})"
+                    },
+                    containerColor = if (isClusteringActive) Color(0xFF4CAF50) else TsuBlue,
+                    contentColor = Color.White,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onClusteringClick
+                )
             }
         }
     }
@@ -373,7 +478,7 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit,
                         clusterColors[clusterIndex % clusterColors.size], CircleShape
                     )
                 )
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.height(4.dp))
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -412,7 +517,6 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit,
                 fontSize = 13.sp,
                 color = Color.Gray
             )
-
             if (clusterIndex != null && metricName != null) {
                 Spacer(Modifier.height(6.dp))
                 Row(
@@ -452,4 +556,73 @@ fun ClusterLegend(metricName: String, clusterCount: Int, modifier: Modifier = Mo
             }
         }
     }
+}
+
+@Composable
+fun CategoryDialog(
+    selectedItems: Set<FoodItem>,
+    onToggle: (FoodItem) -> Unit,
+    onSelectAll: () -> Unit,
+    onClearAll: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val allItems = FoodItem.entries
+    val allSelected = selectedItems.size == allItems.size
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Выберите категории", fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { if (allSelected) onClearAll() else onSelectAll() }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Checkbox(
+                        checked = allSelected,
+                        onCheckedChange = { if (allSelected) onClearAll() else onSelectAll() }
+                    )
+                    Text(
+                        text = if (allSelected) "Снять все" else "Выбрать все",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TsuBlue
+                    )
+                }
+                HorizontalDivider()
+                Spacer(Modifier.height(4.dp))
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 360.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    allItems.forEach { item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onToggle(item) }
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = item in selectedItems,
+                                onCheckedChange = { onToggle(item) }
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(item.label, fontSize = 14.sp)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("OK (${selectedItems.size} выбрано)")
+            }
+        }
+    )
 }
