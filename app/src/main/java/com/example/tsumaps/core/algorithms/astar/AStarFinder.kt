@@ -23,6 +23,9 @@ class AStarFinder (
     private val nodeState = IntArray(size)
     private var iteration = 1
 
+    @Volatile
+    private var iterSkip: Int = 50
+
     override fun setBaseMap(walkableMap: BooleanArray) {
         this.baseGrid = walkableMap
         System.arraycopy(baseGrid, 0, walkableGrid, 0, baseGrid.size)
@@ -102,8 +105,6 @@ class AStarFinder (
             emit(PathfindingEvent.PathFound(null))
             return@flow
         }
-
-        val iterSkip = 50
 
         val startIdx = start.y * width + start.x
         val endIdx = end.y * width + end.x
@@ -211,5 +212,9 @@ class AStarFinder (
         }
         path.reverse()
         return path
+    }
+
+    override fun setAnimationSkip(skip: Int) {
+        this.iterSkip = skip.coerceAtLeast(1) * 5
     }
 }

@@ -38,7 +38,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.text.style.TextAlign
 import com.example.tsumaps.core.algorithms.cluster.ClusterMetricType
 
-private enum class SheetMode {PATHFINDING, CLUSTERING}
+enum class SheetMode { PATHFINDING, CLUSTERING }
 
 val clusterColors = listOf(
     Color.Red, Color.Yellow, Color.Green,
@@ -48,37 +48,45 @@ val clusterColors = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+fun MainScreen(
+    viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val sheetState = rememberBottomSheetScaffoldState()
     val context = androidx.compose.ui.platform.LocalContext.current
 
+    var selectedMode by remember { mutableStateOf<SheetMode?>(null) }
+
     androidx.compose.runtime.LaunchedEffect(viewModel.toastMessage) {
         viewModel.toastMessage?.let { message ->
-            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT)
+                .show()
             viewModel.clearToast()
         }
     }
 
     BottomSheetScaffold(
         scaffoldState = sheetState,
-        sheetContent = {BottomSheetContent(
-            onBuildPathClick = { viewModel.onBuildPathClick() },
-            isSearching = viewModel.isSearching,
-            onSelectionModeClick = { viewModel.toggleSelectionMode() },
-            onObstacleClick = { viewModel.toggleObstacleMode() },
-            onClearObstaclesClick = {viewModel.clearObstacles()} ,
-            isClusteringActive = viewModel.isClusteringActive,
-            onClusteringClick = { viewModel.toggleClustering() },
-            clusterCount = viewModel.clusterCount,
-            isComputingClusters = viewModel.isComputingClusters,
+        sheetContent = {
+            BottomSheetContent(
+                selectedMode = selectedMode,
+                onModeSelected = { selectedMode = it },
+                onBuildPathClick = { viewModel.onBuildPathClick() },
+                isSearching = viewModel.isSearching,
+                onSelectionModeClick = { viewModel.toggleSelectionMode() },
+                onObstacleClick = { viewModel.toggleObstacleMode() },
+                onClearObstaclesClick = { viewModel.clearObstacles() },
+                isClusteringActive = viewModel.isClusteringActive,
+                onClusteringClick = { viewModel.toggleClustering() },
+                clusterCount = viewModel.clusterCount,
+                isComputingClusters = viewModel.isComputingClusters,
             selectedMetric = viewModel.selectedMetric,
             onMetricChange = { viewModel.setClusterMetric(it) },
-            onIncrementCluster = {viewModel.incrementClusterCount()},
-            onDecrementCluster = {viewModel.decrementClusterCount()},
-            onClearPathClick = {viewModel.clearPath()},
-            onBuildFinalPathClick = {viewModel.buildPath()}
-        )},
+            onIncrementCluster = { viewModel.incrementClusterCount() },
+                onDecrementCluster = { viewModel.decrementClusterCount() },
+                onClearPathClick = { viewModel.clearPath() },
+                onBuildFinalPathClick = { viewModel.buildPath() }
+            )
+        },
         sheetPeekHeight = 160.dp,
         sheetShape = RoundedCornerShape(topStart = 50.dp, topEnd = 50.dp),
         sheetShadowElevation = 40.dp,
@@ -89,9 +97,22 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
                 .fillMaxSize()
                 .background(Color(0xFFDEE5ED))
         ) {
-            TsuMapScreen(modifier = Modifier.padding(innerPadding),
+            TsuMapScreen(
+                modifier = Modifier.padding(innerPadding),
                 startPoint = viewModel.startPoint,
-                endPoint = viewModel.endPoint)
+                endPoint = viewModel.endPoint,
+                isPathfindingMode = selectedMode == SheetMode.PATHFINDING
+            )
+
+            if (viewModel.isClusteringActive && viewModel.clusteredPlaces.isNotEmpty()) {
+                ClusterLegend(
+                    metricName = viewModel.selectedMetric.label,
+                    clusterCount = viewModel.clusterCount,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 12.dp, bottom = 200.dp)
+                )
+            }
 
             if (viewModel.isClusteringActive && viewModel.clusteredPlaces.isNotEmpty()) {
                 ClusterLegend(
@@ -109,7 +130,7 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
                     clusterIndex = viewModel.clusteredPlaces
                         .find { it.place.id == place.id }?.clusterIndex,
                     metricName = if (viewModel.isClusteringActive) viewModel.selectedMetric.label else null,
-                    onDismiss = { viewModel.clearSelectedPlace() },
+                    onDismiss = {  viewModel.clearSelectedPlace()  },
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 48.dp, start = 16.dp, end = 16.dp)
@@ -120,16 +141,19 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
 }
 
 @Composable
-fun BottomSheetContent( onBuildPathClick: () -> Unit,isSearching: Boolean,
-                       onSelectionModeClick: () -> Unit, onObstacleClick: () -> Unit,
-                       onClearObstaclesClick: () -> Unit, isClusteringActive: Boolean,
-                       onClusteringClick: () -> Unit,clusterCount: Int, isComputingClusters: Boolean,
+fun BottomSheetContent(
+    selectedMode: SheetMode?,
+    onModeSelected: (SheetMode?) -> Unit,
+     onBuildPathClick: () -> Unit,isSearching: Boolean,
+    onSelectionModeClick: () -> Unit, onObstacleClick: () -> Unit,
+    onClearObstaclesClick: () -> Unit, isClusteringActive: Boolean,
+    onClusteringClick: () -> Unit, clusterCount: Int, isComputingClusters: Boolean,
                        selectedMetric: ClusterMetricType,
                        onMetricChange: (ClusterMetricType) -> Unit,
                        onIncrementCluster: () -> Unit,
-                       onDecrementCluster: () -> Unit, onClearPathClick: () -> Unit,
-                       onBuildFinalPathClick: () -> Unit) {
-    var selectedMode by remember {mutableStateOf<SheetMode?>(null)}
+    onDecrementCluster: () -> Unit, onClearPathClick: () -> Unit,
+    onBuildFinalPathClick: () -> Unit
+) {
 
     Column(
         modifier = Modifier
@@ -137,7 +161,8 @@ fun BottomSheetContent( onBuildPathClick: () -> Unit,isSearching: Boolean,
             .padding(16.dp, 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
+    )
+    {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -148,7 +173,7 @@ fun BottomSheetContent( onBuildPathClick: () -> Unit,isSearching: Boolean,
                 contentColor = Color.White,
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    selectedMode = if (selectedMode == SheetMode.PATHFINDING) null else SheetMode.PATHFINDING
+                    onModeSelected(if (selectedMode == SheetMode.PATHFINDING) null else SheetMode.PATHFINDING)
                 }
             )
 
@@ -158,7 +183,7 @@ fun BottomSheetContent( onBuildPathClick: () -> Unit,isSearching: Boolean,
                 contentColor = Color.White,
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    selectedMode = if (selectedMode == SheetMode.CLUSTERING) null else SheetMode.CLUSTERING
+                    onModeSelected(if (selectedMode == SheetMode.CLUSTERING) null else SheetMode.CLUSTERING)
                 }
             )
         }
@@ -309,6 +334,7 @@ fun BottomSheetContent( onBuildPathClick: () -> Unit,isSearching: Boolean,
         }
     }
 }
+
 @Composable
 fun ActionButton(
     text: String,
@@ -316,7 +342,7 @@ fun ActionButton(
     contentColor: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
-){
+) {
     Button(
         onClick = onClick,
         modifier = modifier,
@@ -361,7 +387,7 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit,
                     color = Color.Black
                 )
                 TextButton(onClick = onDismiss) {
-                    Text("x", color = Color.Black,fontWeight = FontWeight.Bold)
+                    Text("x", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             }
             Text(
@@ -374,7 +400,8 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit,
                 text = when (place.type) {
                     PlaceType.FOOD -> "Кафе / Ресторан"
                     PlaceType.FOOD_SHOP -> "Магазин продуктов"
-                    PlaceType.UNIVERSITY_BUILDING -> "Корпус университета" },
+                    PlaceType.UNIVERSITY_BUILDING -> "Корпус университета"
+                },
                 fontSize = 13.sp,
                 color = TsuBlue,
                 fontWeight = FontWeight.Medium
