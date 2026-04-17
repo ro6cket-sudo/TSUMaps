@@ -54,6 +54,9 @@ import com.example.tsumaps.core.Place
 import com.example.tsumaps.core.PlaceType
 import com.example.tsumaps.core.Point
 import com.example.tsumaps.core.algorithms.cluster.ClusterMetricType
+import com.example.tsumaps.core.algorithms.genetic.CrossoverType
+import com.example.tsumaps.core.algorithms.genetic.MutationType
+import com.example.tsumaps.core.algorithms.genetic.SelectionType
 import com.example.tsumaps.ui.theme.TsuBlue
 import com.example.tsumaps.ui.viewmodels.MapViewModel
 
@@ -112,7 +115,13 @@ fun MainScreen(
                 onRunGeneticClick = { viewModel.runGenetic() },
                 onClearGeneticClick = { viewModel.clearGenetic() },
                 geneticIteration = viewModel.geneticIteration,
-                geneticCost = viewModel.geneticCost
+                geneticCost = viewModel.geneticCost,
+                selectedMutation = viewModel.selectedMutation,
+                onMutationChange = { viewModel.setMutation(it) },
+                selectedCrossover = viewModel.selectedCrossover,
+                onCrossoverChange = { viewModel.setCrossover(it) },
+                selectedSelection = viewModel.selectedSelection,
+                onSelectionChange = { viewModel.setSelection(it) }
             )
         },
         sheetPeekHeight = 160.dp,
@@ -145,10 +154,9 @@ fun MainScreen(
             viewModel.selectedPlace?.let { place ->
                 PlaceInfoCard(
                     place = place,
-                    clusterIndex = viewModel.clusteredPlaces
-                        .find { it.place.id == place.id }?.clusterIndex,
+                    clusterIndex = viewModel.clusteredPlaces.find { it.place.id == place.id }?.clusterIndex,
                     metricName = if (viewModel.isClusteringActive) viewModel.selectedMetric.label else null,
-                    onDismiss = {  viewModel.clearSelectedPlace()  },
+                    onDismiss = { viewModel.clearSelectedPlace() },
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 48.dp, start = 16.dp, end = 16.dp)
@@ -187,7 +195,13 @@ fun BottomSheetContent(
     onRunGeneticClick: () -> Unit,
     onClearGeneticClick: () -> Unit,
     geneticIteration: Int,
-    geneticCost: Int
+    geneticCost: Int,
+    selectedMutation: MutationType,
+    onMutationChange: (MutationType) -> Unit,
+    selectedCrossover: CrossoverType,
+    onCrossoverChange: (CrossoverType) -> Unit,
+    selectedSelection: SelectionType,
+    onSelectionChange: (SelectionType) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -199,7 +213,7 @@ fun BottomSheetContent(
     {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             ActionButton(
                 text = "A* Маршрут",
@@ -210,9 +224,8 @@ fun BottomSheetContent(
                     onModeSelected(if (selectedMode == SheetMode.PATHFINDING) null else SheetMode.PATHFINDING)
                 }
             )
-
             ActionButton(
-                text = "Кластеризация",
+                text = "Кластеры",
                 containerColor = if (selectedMode == SheetMode.CLUSTERING) Color(0xFF4CAF50) else TsuBlue,
                 contentColor = Color.White,
                 modifier = Modifier.weight(1f),
@@ -330,6 +343,27 @@ fun BottomSheetContent(
                         onClick = onGeneticStartClick
                     )
                 }
+                OperatorSelectorRow(
+                    label = "Мутация:",
+                    options = MutationType.entries,
+                    selected = selectedMutation,
+                    labelOf = { it.label },
+                    onSelect = onMutationChange
+                )
+                OperatorSelectorRow(
+                    label = "Скрещивание:",
+                    options = CrossoverType.entries,
+                    selected = selectedCrossover,
+                    labelOf = { it.label },
+                    onSelect = onCrossoverChange
+                )
+                OperatorSelectorRow(
+                    label = "Отбор:",
+                    options = SelectionType.entries,
+                    selected = selectedSelection,
+                    labelOf = { it.label },
+                    onSelect = onSelectionChange
+                )
                 ActionButton(
                     text = if (isGeneticRunning) "Выполняется..." else "Запустить",
                     containerColor = TsuBlue,
@@ -462,9 +496,57 @@ fun ActionButton(
 }
 
 @Composable
-fun PlaceInfoCard(place: Place, onDismiss: () -> Unit,
-                  modifier: Modifier = Modifier, clusterIndex: Int? = null,
-                  metricName: String? = null) {
+fun <T> OperatorSelectorRow(
+    label: String,
+    options: List<T>,
+    selected: T,
+    labelOf: (T) -> String,
+    onSelect: (T) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = Color.DarkGray,
+            fontWeight = FontWeight.Medium
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            options.forEach { option ->
+                val isSelected = option == selected
+                Button(
+                    onClick = { onSelect(option) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isSelected) Color(0xFF1565C0) else Color(0xFFE0E0E0),
+                        contentColor = if (isSelected) Color.White else Color.Black
+                    )
+                ) {
+                    Text(
+                        text = labelOf(option),
+                        fontSize = 11.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PlaceInfoCard(
+    place: Place,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    clusterIndex: Int? = null,
+    metricName: String? = null
+) {
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -474,9 +556,9 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit,
         Column(modifier = Modifier.padding(16.dp)) {
             if (clusterIndex != null) {
                 Box(
-                    modifier = Modifier.size(12.dp).background(
-                        clusterColors[clusterIndex % clusterColors.size], CircleShape
-                    )
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(clusterColors[clusterIndex % clusterColors.size], CircleShape)
                 )
                 Spacer(Modifier.height(4.dp))
             }
@@ -495,11 +577,7 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit,
                     Text("x", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             }
-            Text(
-                text = place.description,
-                fontSize = 14.sp,
-                color = Color.DarkGray
-            )
+            Text(text = place.description, fontSize = 14.sp, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = when (place.type) {
@@ -534,10 +612,10 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit,
                     )
                 }
             }
-
         }
     }
 }
+
 @Composable
 fun ClusterLegend(metricName: String, clusterCount: Int, modifier: Modifier = Modifier) {
     Card(

@@ -45,7 +45,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.unit.dp
-import com.example.tsumaps.core.PlaceStorage
 import kotlin.math.sqrt
 
 class MainActivity : ComponentActivity() {
@@ -273,9 +272,8 @@ fun TsuMapScreen(
                 }
 
                 viewModel.geneticRoute.forEach { place ->
-                    val (gx, gy) = MapConstants.latLonToGrid(place.lat, place.lon)
-                    val cx = gx * cellSize
-                    val cy = gy * cellSize
+                    val cx = place.point.x * cellSize
+                    val cy = place.point.y * cellSize
                     drawCircle(Color.White, radius = 11f, center = Offset(cx, cy))
                     drawCircle(Color(0xFFFF6F00), radius = 8f, center = Offset(cx, cy))
                 }

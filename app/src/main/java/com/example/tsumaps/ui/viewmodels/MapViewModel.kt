@@ -21,15 +21,25 @@ import com.example.tsumaps.core.algorithms.cluster.EuclideanMetric
 import com.example.tsumaps.core.algorithms.cluster.KMedoids
 import com.example.tsumaps.core.algorithms.cluster.ManhattanMetric
 import com.example.tsumaps.core.algorithms.cluster.PathDistanceMetric
+import com.example.tsumaps.core.algorithms.genetic.CrossoverType
 import com.example.tsumaps.core.algorithms.genetic.DistanceMatrixCalc
 import com.example.tsumaps.core.algorithms.genetic.Genetic
 import com.example.tsumaps.core.algorithms.genetic.GeneticEvent
+import com.example.tsumaps.core.algorithms.genetic.MutationType
+import com.example.tsumaps.core.algorithms.genetic.SelectionType
+import com.example.tsumaps.core.algorithms.genetic.crossover.OnePointCrossover
+import com.example.tsumaps.core.algorithms.genetic.crossover.OrderCrossover
+import com.example.tsumaps.core.algorithms.genetic.mutation.InversionMutation
+import com.example.tsumaps.core.algorithms.genetic.mutation.SwapMutation
+import com.example.tsumaps.core.algorithms.genetic.selections.LinearRankSelection
+import com.example.tsumaps.core.algorithms.genetic.selections.ProbTournamentSelection
+import com.example.tsumaps.core.algorithms.genetic.selections.TournamentSelection
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlin.math.sqrt
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
+import kotlin.math.sqrt
 
 class MapViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -56,7 +66,6 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     var isComputingClusters by mutableStateOf(false)
         private set
-
 
     val visiblePlaces: List<Place>
         get() = PlaceStorage.places
@@ -142,13 +151,11 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     fun onMapClick(point: Point) {
         val grid = mapGrid ?: return
         if (isObstacleMode) {
-            val raduis = 1
-
-            for (dx in -raduis..raduis) {
-                for (dy in -raduis..raduis) {
+            val radius = 1
+            for (dx in -radius..radius) {
+                for (dy in -radius..radius) {
                     val nx = point.x + dx
                     val ny = point.y + dy
-
                     if (nx in 0 until MapConstants.GRID_WIDTH &&
                         ny in 0 until MapConstants.GRID_HEIGHT
                     ) {
@@ -173,9 +180,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-
         if (!isSelectionMode) return
-
 
         if (point.x !in 0 until MapConstants.GRID_WIDTH ||
             point.y !in 0 until MapConstants.GRID_HEIGHT
@@ -232,9 +237,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         pathFinder.setObstacles(customObstacles.toList())
 
         viewModelScope.launch(Dispatchers.Default) {
-            withContext(Dispatchers.Main) {isSearching = true}
+            withContext(Dispatchers.Main) { isSearching = true }
 
-            val path = pathFinder.findPath(start,end)
+            val path = pathFinder.findPath(start, end)
 
             withContext(Dispatchers.Main) {
                 isSearching = false
@@ -279,21 +284,17 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         closedNodes.clear()
         finalPath.clear()
 
-        pathfindingJob = viewModelScope.launch {
-            pathFinder.findPathAnimated(start, end, 30).collect { event ->
-                when (event) {
-                    is PathfindingEvent.NodesOpened -> {
-                        openNodes.addAll(event.points)
-                    }
+        pathFinder.setAnimationSkip(currentIterSkip)
 
+        pathfindingJob = viewModelScope.launch {
+            pathFinder.findPathAnimated(start, end).collect { event ->
+                when (event) {
+                    is PathfindingEvent.NodesOpened -> openNodes.addAll(event.points)
                     is PathfindingEvent.NodeClosed -> {
                         openNodes.remove(event.point)
                         closedNodes.add(event.point)
                     }
-
-                    is PathfindingEvent.PathFound -> {
-                        event.path?.let { finalPath.addAll(it) }
-                    }
+                    is PathfindingEvent.PathFound -> event.path?.let { finalPath.addAll(it) }
                 }
             }
         }
@@ -313,7 +314,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             val metric = when (selectedMetric) {
                 ClusterMetricType.EUCLIDEAN -> EuclideanMetric()
                 ClusterMetricType.MANHATTAN -> ManhattanMetric()
-                ClusterMetricType.PEDESTRIAN -> { pathDistanceMetric }
+                ClusterMetricType.PEDESTRIAN -> pathDistanceMetric
             }
 
             val result = KMedoids.cluster(PlaceStorage.places, clusterCount, metric)
@@ -329,14 +330,14 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     fun onPlaceTap(gridX: Int, gridY: Int) {
         val tapRadius = 10
         var bestPlace: Place? = null
-        var bestDict = Double.MAX_VALUE
+        var bestDist = Double.MAX_VALUE
         for (place in PlaceStorage.places) {
             val (px, py) = MapConstants.latLonToGrid(place.lat, place.lon)
             val dX = (gridX - px).toDouble()
             val dY = (gridY - py).toDouble()
             val dist = sqrt(dX * dX + dY * dY)
-            if (dist < tapRadius && dist < bestDict) {
-                bestDict = dist
+            if (dist < tapRadius && dist < bestDist) {
+                bestDist = dist
                 bestPlace = place
             }
         }
@@ -365,7 +366,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         clusterCount = (clusterCount - 1).coerceAtLeast(2)
     }
 
-    var currentIterSkip by mutableIntStateOf(1)
+    var currentIterSkip by mutableIntStateOf(10)
         private set
 
     fun decreaseSpeed() {
@@ -427,6 +428,17 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         isGeneticSelectionMode = false
     }
 
+    var selectedMutation by mutableStateOf(MutationType.SWAP)
+        private set
+    var selectedCrossover by mutableStateOf(CrossoverType.ORDER)
+        private set
+    var selectedSelection by mutableStateOf(SelectionType.TOURNAMENT)
+        private set
+
+    fun setMutation(type: MutationType) { selectedMutation = type }
+    fun setCrossover(type: CrossoverType) { selectedCrossover = type }
+    fun setSelection(type: SelectionType) { selectedSelection = type }
+
     fun runGenetic() {
         val start = geneticStartPoint ?: run {
             toastMessage = "Сначала установите начальную точку"
@@ -446,10 +458,10 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             geneticPathSegments.clear()
 
             val places = withContext(Dispatchers.Default) {
-                PlaceStorage.places.map { place ->
-                    val snapped = findNearestRoad(place.point.x, place.point.y, 10, grid)
-                        ?: place.point
-                    place.copy(point = snapped)
+                PlaceStorage.places.mapNotNull { place ->
+                    val (gx, gy) = MapConstants.latLonToGrid(place.lat, place.lon)
+                    val snapped = findNearestRoad(gx, gy, 20, grid)
+                    snapped?.let { place.copy(point = it) }
                 }
             }
 
@@ -461,7 +473,25 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             val cal = Calendar.getInstance()
             val currentTime = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
 
-            Genetic().findOptimalRoute(places, selectedFoodItems, currentTime, matrix, startDists)
+            val mutationOp = when (selectedMutation) {
+                MutationType.SWAP -> SwapMutation()
+                MutationType.INVERSION -> InversionMutation()
+            }
+            val crossoverOp = when (selectedCrossover) {
+                CrossoverType.ORDER -> OrderCrossover()
+                CrossoverType.ONE_POINT -> OnePointCrossover()
+            }
+            val selectionOp = when (selectedSelection) {
+                SelectionType.TOURNAMENT -> TournamentSelection()
+                SelectionType.PROB_TOURNAMENT -> ProbTournamentSelection()
+                SelectionType.LINEAR_RANK -> LinearRankSelection()
+            }
+
+            Genetic(
+                mutation = mutationOp,
+                crossover = crossoverOp,
+                selection = selectionOp
+            ).findOptimalRoute(places, selectedFoodItems, currentTime, matrix, startDists)
                 .collect { event ->
                     when (event) {
                         is GeneticEvent.NewBestRoute -> Unit
@@ -471,7 +501,6 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                             geneticIteration = event.iterations
                             geneticCost = event.totalCost
                             computeGeneticPathSegments(start, event.finalRoute)
-                            toastMessage = "Маршрут найден за ${event.iterations} итераций"
                         }
                         is GeneticEvent.NoSolutionFound -> {
                             toastMessage = "Маршрут не найден: нет подходящих открытых мест"
