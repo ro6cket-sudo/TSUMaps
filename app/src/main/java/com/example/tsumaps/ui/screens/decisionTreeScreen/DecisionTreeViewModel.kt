@@ -10,6 +10,8 @@ import com.example.tsumaps.core.decision_tree.MetricType
 
 class DecisionTreeViewModel : ViewModel() {
     var csvText by mutableStateOf("")
+    var maxDepth by mutableStateOf(4f)
+    var selectionMetric by mutableStateOf(MetricType.ENTROPY)
     var tree by mutableStateOf<LunchDecisionTree?>(null)
     var isOptimized by mutableStateOf(false)
 
@@ -19,7 +21,7 @@ class DecisionTreeViewModel : ViewModel() {
     fun buildingTree(){
         val decisionTree = LunchDecisionTree(MetricType.ENTROPY)
         val data = decisionTree.parseCsv(csvText)
-        decisionTree.train(data)
+        decisionTree.train(data, maxDepth.toInt(), selectionMetric)
         if (isOptimized) decisionTree.optimize()
         tree = decisionTree
     }

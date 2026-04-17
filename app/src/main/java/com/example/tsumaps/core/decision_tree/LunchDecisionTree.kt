@@ -3,8 +3,8 @@ package com.example.tsumaps.core.decision_tree
 import kotlin.math.log2
 
 class LunchDecisionTree(
-    private val metricType: MetricType,
-    private val maxDepth: Int = 4
+    private var metricType: MetricType,
+    private var maxDepth: Int = 4
 ) {
     var root: TreeNode? = null
     private val targetColumn = "recommended_place"
@@ -16,15 +16,16 @@ class LunchDecisionTree(
 
         for (i in 1 until lines.size){
             val values = lines[i].split(",").map {it.trim()}
+            if (values.size < headers.size) continue
             val features = mutableMapOf<String, String>()
             var target = ""
 
             for (j in headers.indices){
                 if (headers[j] == targetColumn){
-                    target = values[j]
+                    target = values[j].trim()
                 }
                 else{
-                    features[headers[j]] = values[j]
+                    features[headers[j]] = values[j].trim()
                 }
             }
             dataset.add(DataRow(features, target))
@@ -37,7 +38,7 @@ class LunchDecisionTree(
             return 0.0F
         }
         val counts = data.groupingBy { it.target }.eachCount()
-        var gini = 0.5F
+        var gini = 1.0F
         for (count in counts.values){
             val prob = count.toFloat() / data.size
             gini -= prob * prob
@@ -66,14 +67,19 @@ class LunchDecisionTree(
         return (calculateGini(data) * 2 + calculateEntropy(data)) / 2.0F
     }
 
-    fun train(data: List<DataRow>){
+    fun train(data: List<DataRow>, depth: Int, metric: MetricType){
+        this.maxDepth = depth
+        this.metricType = metric
         root = buildTree(data, 0)
     }
 
     private fun buildTree(data: List<DataRow>, depth: Int): TreeNode{
         val majorityClass = data.groupingBy { it.target }.eachCount().maxByOrNull { it.value }?.key ?: ""
 
-        if (data.isEmpty() || data.map {it.target}.distinct().size == 1 || depth >= maxDepth){
+        val currentImpurity = calculateImpurity(data)
+
+        if (data.isEmpty() || data.map {it.target}.distinct().size == 1
+            || depth >= maxDepth || currentImpurity == 0.0f){
             return TreeNode(isLeaf = true, prediction = majorityClass)
         }
 
@@ -87,6 +93,11 @@ class LunchDecisionTree(
                 bestImpurity = impurity
                 bestFeature = feature
             }
+        }
+
+        val infGain = currentImpurity - bestImpurity
+        if (infGain <= 0.001f){
+            return TreeNode(isLeaf = true, prediction = majorityClass)
         }
 
         val node = TreeNode(feature = bestFeature, planB = majorityClass)
@@ -116,8 +127,8 @@ class LunchDecisionTree(
         var currentNode = root ?: return Pair("Нет данных", path)
 
         while (!currentNode.isLeaf){
-            val feature = currentNode.feature
-            val value = input[feature]
+            val feature = currentNode.feature!!
+            val value = input[feature] ?: "unknow"
             path.add("$feature: $value")
 
             val nextNode = currentNode.children[value]
