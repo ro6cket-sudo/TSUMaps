@@ -36,39 +36,47 @@ import com.example.tsumaps.ui.viewmodels.MapViewModel
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.text.style.TextAlign
 
-private enum class SheetMode {PATHFINDING, CLUSTERING}
+enum class SheetMode { PATHFINDING, CLUSTERING }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+fun MainScreen(
+    viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val sheetState = rememberBottomSheetScaffoldState()
     val context = androidx.compose.ui.platform.LocalContext.current
 
+    var selectedMode by remember { mutableStateOf<SheetMode?>(null) }
+
     androidx.compose.runtime.LaunchedEffect(viewModel.toastMessage) {
         viewModel.toastMessage?.let { message ->
-            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT)
+                .show()
             viewModel.clearToast()
         }
     }
 
     BottomSheetScaffold(
         scaffoldState = sheetState,
-        sheetContent = {BottomSheetContent(
-            onBuildPathClick = { viewModel.onBuildPathClick() },
-            isSearching = viewModel.isSearching,
-            onSelectionModeClick = { viewModel.toggleSelectionMode() },
-            onObstacleClick = { viewModel.toggleObstacleMode() },
-            onClearObstaclesClick = {viewModel.clearObstacles()} ,
-            isClusteringActive = viewModel.isClusteringActive,
-            onClusteringClick = { viewModel.toggleClustering() },
-            clusterCount = viewModel.clusterCount,
-            onIncrementCluster = {viewModel.incrementClusterCount()},
-            onDecrementCluster = {viewModel.decrementClusterCount()},
-            onClearPathClick = {viewModel.clearPath()},
-            onBuildFinalPathClick = {viewModel.buildPath()}
-        )},
+        sheetContent = {
+            BottomSheetContent(
+                selectedMode = selectedMode,
+                onModeSelected = { selectedMode = it },
+                onBuildPathClick = { viewModel.onBuildPathClick() },
+                isSearching = viewModel.isSearching,
+                onSelectionModeClick = { viewModel.toggleSelectionMode() },
+                onObstacleClick = { viewModel.toggleObstacleMode() },
+                onClearObstaclesClick = { viewModel.clearObstacles() },
+                isClusteringActive = viewModel.isClusteringActive,
+                onClusteringClick = { viewModel.toggleClustering() },
+                clusterCount = viewModel.clusterCount,
+                onIncrementCluster = { viewModel.incrementClusterCount() },
+                onDecrementCluster = { viewModel.decrementClusterCount() },
+                onClearPathClick = { viewModel.clearPath() },
+                onBuildFinalPathClick = { viewModel.buildPath() }
+            )
+        },
         sheetPeekHeight = 160.dp,
         sheetShape = RoundedCornerShape(topStart = 50.dp, topEnd = 50.dp),
         sheetShadowElevation = 40.dp,
@@ -79,16 +87,19 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
                 .fillMaxSize()
                 .background(Color(0xFFDEE5ED))
         ) {
-            TsuMapScreen(modifier = Modifier.padding(innerPadding),
+            TsuMapScreen(
+                modifier = Modifier.padding(innerPadding),
                 startPoint = viewModel.startPoint,
-                endPoint = viewModel.endPoint)
+                endPoint = viewModel.endPoint,
+                isPathfindingMode = selectedMode == SheetMode.PATHFINDING
+            )
 
             viewModel.selectedPlace?.let { place ->
                 PlaceInfoCard(
                     place = place,
-                    onDismiss = {viewModel.clearSelectedPlace()},
+                    onDismiss = { viewModel.clearSelectedPlace() },
                     modifier = Modifier
-                        .align (Alignment.TopCenter)
+                        .align(Alignment.TopCenter)
                         .padding(top = 48.dp, start = 16.dp, end = 16.dp)
                 )
             }
@@ -97,20 +108,24 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
 }
 
 @Composable
-fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit,
-                       onSelectionModeClick: () -> Unit, onObstacleClick: () -> Unit,
-                       onClearObstaclesClick: () -> Unit, isClusteringActive: Boolean,
-                       onClusteringClick: () -> Unit,clusterCount: Int, onIncrementCluster: () -> Unit,
-                       onDecrementCluster: () -> Unit, onClearPathClick: () -> Unit,
-                       onBuildFinalPathClick: () -> Unit) {
-    var selectedMode by remember {mutableStateOf<SheetMode?>(null)}
+fun BottomSheetContent(
+    selectedMode: SheetMode?,
+    onModeSelected: (SheetMode?) -> Unit,
+    isSearching: Boolean, onBuildPathClick: () -> Unit,
+    onSelectionModeClick: () -> Unit, onObstacleClick: () -> Unit,
+    onClearObstaclesClick: () -> Unit, isClusteringActive: Boolean,
+    onClusteringClick: () -> Unit, clusterCount: Int, onIncrementCluster: () -> Unit,
+    onDecrementCluster: () -> Unit, onClearPathClick: () -> Unit,
+    onBuildFinalPathClick: () -> Unit
+) {
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp, 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp))
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    )
     {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -122,7 +137,7 @@ fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit,
                 contentColor = Color.White,
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    selectedMode = if (selectedMode == SheetMode.PATHFINDING) null else SheetMode.PATHFINDING
+                    onModeSelected(if (selectedMode == SheetMode.PATHFINDING) null else SheetMode.PATHFINDING)
                 }
             )
 
@@ -132,7 +147,7 @@ fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit,
                 contentColor = Color.White,
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    selectedMode = if (selectedMode == SheetMode.CLUSTERING) null else SheetMode.CLUSTERING
+                    onModeSelected(if (selectedMode == SheetMode.CLUSTERING) null else SheetMode.CLUSTERING)
                 }
             )
         }
@@ -257,6 +272,7 @@ fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit,
         }
     }
 }
+
 @Composable
 fun ActionButton(
     text: String,
@@ -264,7 +280,7 @@ fun ActionButton(
     contentColor: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
-){
+) {
     Button(
         onClick = onClick,
         modifier = modifier,
@@ -299,7 +315,7 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit, modifier: Modifier = Modi
                     color = Color.Black
                 )
                 TextButton(onClick = onDismiss) {
-                    Text("x", color = Color.Black,fontWeight = FontWeight.Bold)
+                    Text("x", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             }
             Text(
@@ -312,7 +328,8 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit, modifier: Modifier = Modi
                 text = when (place.type) {
                     PlaceType.FOOD -> "Кафе / Ресторан"
                     PlaceType.FOOD_SHOP -> "Магазин продуктов"
-                    PlaceType.UNIVERSITY_BUILDING -> "Корпус университета" },
+                    PlaceType.UNIVERSITY_BUILDING -> "Корпус университета"
+                },
                 fontSize = 13.sp,
                 color = TsuBlue,
                 fontWeight = FontWeight.Medium
@@ -323,7 +340,6 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit, modifier: Modifier = Modi
                 fontSize = 13.sp,
                 color = Color.Gray
             )
-
         }
     }
 }

@@ -46,7 +46,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     val visiblePlaces: List<Place>
         get() = PlaceStorage.places
 
-    var selectedPlace by  mutableStateOf<Place?>(null)
+    var selectedPlace by mutableStateOf<Place?>(null)
         private set
 
     var clusteredPlaces by mutableStateOf<List<ClusteredPlace>>(emptyList())
@@ -55,7 +55,10 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     var isClusteringActive by mutableStateOf(false)
         private set
 
-    fun clearToast() { toastMessage = null }
+    fun clearToast() {
+        toastMessage = null
+    }
+
     init {
         loadMapData()
     }
@@ -122,8 +125,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                     val ny = point.y + dy
 
                     if (nx in 0 until MapConstants.GRID_WIDTH &&
-                        ny in 0 until MapConstants.GRID_HEIGHT) {
-                        val newPoint = Point.of(nx,ny)
+                        ny in 0 until MapConstants.GRID_HEIGHT
+                    ) {
+                        val newPoint = Point.of(nx, ny)
                         if (!customObstacles.contains(newPoint)) {
                             customObstacles.add(newPoint)
                         }
@@ -137,7 +141,8 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
 
         if (point.x !in 0 until MapConstants.GRID_WIDTH ||
-            point.y !in 0 until MapConstants.GRID_HEIGHT) {
+            point.y !in 0 until MapConstants.GRID_HEIGHT
+        ) {
             return
         }
 
@@ -167,8 +172,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             pathFinder.clearDynamicObstacles()
             pathFinder.setObstacles(customObstacles.toList())
             startAnimatedPath(startPoint!!, endPoint!!)
-        }
-        else {
+        } else {
             toastMessage = "Сначала установите обе точки"
         }
     }
@@ -193,8 +197,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                     if (path == null) toastMessage = "Путь не найден"
                 }
             }
-        }
-        else {
+        } else {
             toastMessage = "Сначала установите точки"
         }
     }
@@ -223,6 +226,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
         return bestPoint
     }
+
     fun startAnimatedPath(start: Point, end: Point) {
         pathfindingJob?.cancel()
 
@@ -266,9 +270,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         var bestDict = Double.MAX_VALUE
         for (place in PlaceStorage.places) {
             val (px, py) = MapConstants.latLonToGrid(place.lat, place.lon)
-            val dX = (gridX -px).toDouble()
-            val dY = (gridY -py).toDouble()
-            val dist = sqrt(dX*dX + dY*dY)
+            val dX = (gridX - px).toDouble()
+            val dY = (gridY - py).toDouble()
+            val dist = sqrt(dX * dX + dY * dY)
             if (dist < tapRadius && dist < bestDict) {
                 bestDict = dist
                 bestPlace = place
@@ -297,5 +301,18 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     fun decrementClusterCount() {
         clusterCount = (clusterCount - 1).coerceAtLeast(2)
+    }
+
+    var currentIterSkip by mutableIntStateOf(1)
+        private set
+
+    fun decreaseSpeed() {
+        currentIterSkip = (currentIterSkip - 1).coerceAtLeast(1)
+        pathFinder.setAnimationSkip(currentIterSkip)
+    }
+
+    fun increaseSpeed() {
+        currentIterSkip = (currentIterSkip + 1).coerceAtMost(30)
+        pathFinder.setAnimationSkip(currentIterSkip)
     }
 }
