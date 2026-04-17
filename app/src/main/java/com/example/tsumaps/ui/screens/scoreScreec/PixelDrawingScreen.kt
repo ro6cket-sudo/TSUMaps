@@ -77,7 +77,7 @@ fun PixelDrawingScreen() {
         Spacer(modifier = Modifier.height(40.dp))
 
         Text(
-            text = "Интелектуальный ввод.",
+            text = "Интелектуальный ввод",
             fontSize = 24.sp,
             fontWeight = FontWeight.ExtraBold,
             color = TsuBlue
