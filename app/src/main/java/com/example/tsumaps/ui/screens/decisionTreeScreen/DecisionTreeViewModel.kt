@@ -15,15 +15,27 @@ class DecisionTreeViewModel : ViewModel() {
     var tree by mutableStateOf<LunchDecisionTree?>(null)
     var isOptimized by mutableStateOf(false)
 
+    var availableFeatures by mutableStateOf<List<String>>(emptyList())
     val userSelections = mutableStateMapOf<String, String>()
     var predictionResult by mutableStateOf<Pair<String, List<String>>?>(null)
+    var errorMassage by mutableStateOf<String?>(null)
 
     fun buildingTree(){
-        val decisionTree = LunchDecisionTree(MetricType.ENTROPY)
-        val data = decisionTree.parseCsv(csvText)
-        decisionTree.train(data, maxDepth.toInt(), selectionMetric)
-        if (isOptimized) decisionTree.optimize()
-        tree = decisionTree
+        try {
+            errorMassage = null
+            predictionResult = null
+            userSelections.clear()
+
+            val decisionTree = LunchDecisionTree(MetricType.ENTROPY)
+            val data = decisionTree.parseCsv(csvText)
+            decisionTree.train(data, maxDepth.toInt(), selectionMetric)
+            if (isOptimized) decisionTree.optimize()
+            tree = decisionTree
+            availableFeatures = decisionTree.featureNames
+        }catch (error: Exception){
+            errorMassage = "Ошибка парсинга или построения: ${error.toString()}"
+            tree = null
+        }
     }
 
     fun makePrediction(){

@@ -37,6 +37,14 @@ fun DecisionTreeScreen(viewModel: DecisionTreeViewModel = viewModel()){
 
         CsvInputSection(viewModel)
 
+        viewModel.errorMassage?.let {error ->
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         viewModel.tree?.root?.let {rootNode ->

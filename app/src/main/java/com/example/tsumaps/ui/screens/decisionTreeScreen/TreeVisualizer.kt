@@ -1,6 +1,5 @@
 package com.example.tsumaps.ui.screens.decisionTreeScreen
 
-import android.R
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -17,7 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.tsumaps.core.decision_tree.TreeNode
 import com.example.tsumaps.ui.theme.TsuBlue
-import java.nio.file.WatchEvent
 
 @Composable
 fun TreeVisualizer(node: TreeNode, depth: Int = 0){

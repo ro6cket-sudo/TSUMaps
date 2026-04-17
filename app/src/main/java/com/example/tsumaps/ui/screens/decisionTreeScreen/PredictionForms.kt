@@ -18,8 +18,11 @@ import com.example.tsumaps.ui.theme.TsuLightBlue
 
 @Composable
 fun PredictionForm(viewModel: DecisionTreeViewModel) {
-    val features = listOf("location", "budget", "time_available",
-        "food_type", "queue_tolerance", "weather" )
+//    val features = listOf("location", "budget", "time_available",
+//        "food_type", "queue_tolerance", "weather" )
+
+    val features = viewModel.availableFeatures
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = TsuLightBlue)
@@ -27,18 +30,26 @@ fun PredictionForm(viewModel: DecisionTreeViewModel) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Ваша ситуация:", style = MaterialTheme.typography.titleLarge)
 
-            features.forEach { feature ->
-                OutlinedTextField(
-                    value = viewModel.userSelections[feature] ?: "",
-                    onValueChange = { viewModel.userSelections[feature] = it},
-                    label = {Text(feature)},
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                )
+            if (features.isEmpty()){
+                Text("Признаки не найдены", color = MaterialTheme.colorScheme.error)
+            }else {
+                features.forEach { feature ->
+                    OutlinedTextField(
+                        value = viewModel.userSelections[feature] ?: "",
+                        onValueChange = { viewModel.userSelections[feature] = it },
+                        label = { Text(feature) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    )
+                }
             }
 
             Button(
                 onClick = {viewModel.makePrediction()},
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = TsuBlue)
             ) {
                 Text("Куда мне пойти?")

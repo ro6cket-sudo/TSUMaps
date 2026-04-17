@@ -9,10 +9,18 @@ class LunchDecisionTree(
     var root: TreeNode? = null
     private val targetColumn = "recommended_place"
 
+    var featureNames: List<String> = emptyList()
+
     fun parseCsv(cscText: String): List<DataRow> {
         val lines = cscText.trim().lines().filter {it.isNotBlank()}
+        if (lines.isEmpty()) throw IllegalArgumentException("CSV пуст.")
+
         val headers = lines.first().split(",").map {it.trim()}
         val dataset = mutableListOf<DataRow>()
+
+        featureNames = headers.filter{it != targetColumn}
+
+
 
         for (i in 1 until lines.size){
             val values = lines[i].split(",").map {it.trim()}
@@ -70,10 +78,11 @@ class LunchDecisionTree(
     fun train(data: List<DataRow>, depth: Int, metric: MetricType){
         this.maxDepth = depth
         this.metricType = metric
-        root = buildTree(data, 0)
+        val initialFeatures = featureNames.toSet()
+        root = buildTree(data, 0, initialFeatures)
     }
 
-    private fun buildTree(data: List<DataRow>, depth: Int): TreeNode{
+    private fun buildTree(data: List<DataRow>, depth: Int, availableFeatures: Set<String>): TreeNode{
         val majorityClass = data.groupingBy { it.target }.eachCount().maxByOrNull { it.value }?.key ?: ""
 
         val currentImpurity = calculateImpurity(data)
@@ -83,11 +92,10 @@ class LunchDecisionTree(
             return TreeNode(isLeaf = true, prediction = majorityClass)
         }
 
-        val features = data.first().features.keys
         var bestFeature = ""
         var bestImpurity = Float.MAX_VALUE
 
-        for (feature in features){
+        for (feature in availableFeatures){
             val impurity = calculateSplitImpurity(data, feature)
             if (impurity < bestImpurity){
                 bestImpurity = impurity
@@ -103,8 +111,10 @@ class LunchDecisionTree(
         val node = TreeNode(feature = bestFeature, planB = majorityClass)
         val branches = data.groupBy { it.features[bestFeature]!! }
 
+        val remainingFeatures = availableFeatures - bestFeature
+
         for ((value, subset) in branches) {
-            node.children[value] = buildTree(subset, depth + 1)
+            node.children[value] = buildTree(subset, depth + 1, remainingFeatures)
         }
         return node
     }
@@ -133,7 +143,7 @@ class LunchDecisionTree(
 
             val nextNode = currentNode.children[value]
             if (nextNode == null) {
-                path.add("НЕизвестное значение, идем по Plan B")
+                path.add("Неизвестное значение $value, идем по Plan B (большинство)")
                 return Pair(currentNode.planB, path)
             }
             currentNode = nextNode
