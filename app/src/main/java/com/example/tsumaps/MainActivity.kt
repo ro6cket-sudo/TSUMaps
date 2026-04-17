@@ -221,7 +221,9 @@ fun TsuMapScreen(modifier: Modifier = Modifier,
 
                 if (viewModel.isClusteringActive) {
                     val clusterColors = listOf(
-                        Color.Red, Color.Yellow, Color.Green, Color.Magenta, Color.Cyan
+                        Color.Red, Color(0xFF8BC34A), Color.Green, Color.Magenta, Color.Cyan,
+                        Color(0xFFFF9800),Color(0xFFBCAAA4),Color(0xFFA5D6A7),Color(0xFFE91E63),
+                        Color(0xFFB0BEC5)
                     )
 
                     viewModel.clusteredPlaces.forEach { cp ->

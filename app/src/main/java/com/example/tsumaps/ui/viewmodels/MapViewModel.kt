@@ -2,6 +2,7 @@ package com.example.tsumaps.ui.viewmodels
 
 import android.app.Application
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -176,6 +177,10 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         val start = startPoint
         val end = endPoint
 
+        openNodes.clear()
+        closedNodes.clear()
+        finalPath.clear()
+
         if (start != null && end != null) {
             viewModelScope.launch(Dispatchers.Default) {
                 isSearching = true
@@ -185,8 +190,12 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                 withContext(Dispatchers.Main) {
                     calculatedPath = path ?: emptyList()
                     isSearching = false
+                    if (path == null) toastMessage = "Путь не найден"
                 }
             }
+        }
+        else {
+            toastMessage = "Сначала установите точки"
         }
     }
 
@@ -246,7 +255,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             clusteredPlaces = emptyList()
             isClusteringActive = false
         } else {
-            clusteredPlaces = Clustering.kMeans(PlaceStorage.places, 5)
+            clusteredPlaces = Clustering.kMeans(PlaceStorage.places, clusterCount)
             isClusteringActive = true
         }
     }
@@ -266,5 +275,27 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         selectedPlace = bestPlace
+    }
+
+    fun clearPath() {
+        pathfindingJob?.cancel()
+        openNodes.clear()
+        closedNodes.clear()
+        finalPath.clear()
+        calculatedPath = emptyList()
+        startPoint = null
+        endPoint = null
+        toastMessage = "Маршрут очищен"
+    }
+
+    var clusterCount by mutableIntStateOf(5)
+        private set
+
+    fun incrementClusterCount() {
+        clusterCount = (clusterCount + 1).coerceAtMost(10)
+    }
+
+    fun decrementClusterCount() {
+        clusterCount = (clusterCount - 1).coerceAtLeast(2)
     }
 }

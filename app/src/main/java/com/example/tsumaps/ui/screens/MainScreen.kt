@@ -1,5 +1,8 @@
 package com.example.tsumaps.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,9 +13,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -24,6 +33,10 @@ import com.example.tsumaps.core.Place
 import com.example.tsumaps.core.PlaceType
 import com.example.tsumaps.ui.theme.TsuBlue
 import com.example.tsumaps.ui.viewmodels.MapViewModel
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.text.style.TextAlign
+
+private enum class SheetMode {PATHFINDING, CLUSTERING}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,7 +62,12 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
             onObstacleClick = { viewModel.toggleObstacleMode() },
             onClearObstaclesClick = {viewModel.clearObstacles()} ,
             isClusteringActive = viewModel.isClusteringActive,
-            onClusteringClick = { viewModel.toggleClustering() }
+            onClusteringClick = { viewModel.toggleClustering() },
+            clusterCount = viewModel.clusterCount,
+            onIncrementCluster = {viewModel.incrementClusterCount()},
+            onDecrementCluster = {viewModel.decrementClusterCount()},
+            onClearPathClick = {viewModel.clearPath()},
+            onBuildFinalPathClick = {viewModel.buildPath()}
         )},
         sheetPeekHeight = 160.dp,
         sheetShape = RoundedCornerShape(topStart = 50.dp, topEnd = 50.dp),
@@ -82,64 +100,160 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
 fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit,
                        onSelectionModeClick: () -> Unit, onObstacleClick: () -> Unit,
                        onClearObstaclesClick: () -> Unit, isClusteringActive: Boolean,
-                       onClusteringClick: () -> Unit) {
+                       onClusteringClick: () -> Unit,clusterCount: Int, onIncrementCluster: () -> Unit,
+                       onDecrementCluster: () -> Unit, onClearPathClick: () -> Unit,
+                       onBuildFinalPathClick: () -> Unit) {
+    var selectedMode by remember {mutableStateOf<SheetMode?>(null)}
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(500.dp)
-            .padding((16.dp)),
-        horizontalAlignment = Alignment.CenterHorizontally)
+            .padding(16.dp, 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp))
     {
         Row(
-            modifier = Modifier,
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ActionButton(
-                text = if (isSearching) "Поиск..." else "Построить Маршрут",
-                containerColor = TsuBlue,
+                text = "A* Маршрут",
+                containerColor = if (selectedMode == SheetMode.PATHFINDING) Color(0xFF4CAF50) else TsuBlue,
                 contentColor = Color.White,
                 modifier = Modifier.weight(1f),
-                onClick = onBuildPathClick
-            )
-            ActionButton(
-                text = if (isSearching) "Поиск..." else "Поставить точки",
-                containerColor = TsuBlue,
-                contentColor = Color.White,
-                modifier = Modifier.weight(1f),
-                onClick = onSelectionModeClick
-            )
-        }
-        Row(
-            modifier = Modifier,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            ActionButton(
-                text = "Добавить стены",
-                containerColor = TsuBlue,
-                contentColor = Color.White,
-                modifier = Modifier.weight(1f),
-                onClick = onObstacleClick
+                onClick = {
+                    selectedMode = if (selectedMode == SheetMode.PATHFINDING) null else SheetMode.PATHFINDING
+                }
             )
 
             ActionButton(
-                text = "Очистить стены",
-                containerColor = TsuBlue,
+                text = "Кластеризация",
+                containerColor = if (selectedMode == SheetMode.CLUSTERING) Color(0xFF4CAF50) else TsuBlue,
                 contentColor = Color.White,
-                modifier = Modifier.weight(0.4f),
-                onClick = onClearObstaclesClick
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    selectedMode = if (selectedMode == SheetMode.CLUSTERING) null else SheetMode.CLUSTERING
+                }
             )
         }
-        Row(
-            modifier = Modifier,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+
+        AnimatedVisibility(
+            visible = selectedMode == SheetMode.PATHFINDING,
+            enter = expandVertically(),
+            exit = shrinkVertically()
         ) {
-            ActionButton(
-                text = if (isClusteringActive) "Скрыть кластеры" else "Кластеризация",
-                containerColor = if (isClusteringActive) Color.Green else TsuBlue,
-                contentColor = Color.White,
-                modifier = Modifier.weight(0.4f),
-                onClick = onClusteringClick
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ActionButton(
+                        text = if (isSearching) "Поиск..." else "Поставить точки",
+                        containerColor = TsuBlue,
+                        contentColor = Color.White,
+                        modifier = Modifier.weight(1f),
+                        onClick = onSelectionModeClick
+                    )
+
+                    ActionButton(
+                        text = if (isSearching) "Поиск..." else "А* с анимацией",
+                        containerColor = TsuBlue,
+                        contentColor = Color.White,
+                        modifier = Modifier.weight(1f),
+                        onClick = onBuildPathClick
+                    )
+                }
+                Row(
+                    modifier = Modifier,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ActionButton(
+                        text = if (isSearching) "Поиск..." else "Итоговый маршрут",
+                        containerColor = TsuBlue,
+                        contentColor = Color.White,
+                        modifier = Modifier.weight(1f),
+                        onClick = onBuildFinalPathClick
+                    )
+
+                    ActionButton(
+                        text = "Очистить маршрут",
+                        containerColor = Color(0xFFF44336),
+                        contentColor = Color.White,
+                        modifier = Modifier.weight(1f),
+                        onClick = onClearPathClick
+                    )
+                }
+                Row(
+                    modifier = Modifier,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ActionButton(
+                        text = "Добавить стены",
+                        containerColor = TsuBlue,
+                        contentColor = Color.White,
+                        modifier = Modifier.weight(0.4f),
+                        onClick = onObstacleClick
+                    )
+
+                    ActionButton(
+                        text = "Очистить стены",
+                        containerColor = Color(0xFFF44336),
+                        contentColor = Color.White,
+                        modifier = Modifier.weight(0.4f),
+                        onClick = onClearObstaclesClick
+                    )
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = selectedMode == SheetMode.CLUSTERING,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Количество кластеров: ",
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    OutlinedButton(
+                        onClick = onDecrementCluster,
+                        modifier = Modifier.size(36.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text("-", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Text(
+                        text = "$clusterCount",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.width(36.dp),
+                        textAlign = TextAlign.Center
+                    )
+                    OutlinedButton(
+                        onClick = onIncrementCluster,
+                        modifier = Modifier.size(36.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text("+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                ActionButton(
+                    text = if (isClusteringActive) "Скрыть кластеры" else "Кластеризация",
+                    containerColor = if (isClusteringActive) Color(0xFF4CAF50) else TsuBlue,
+                    contentColor = Color.White,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onClusteringClick
+                )
+            }
         }
     }
 }

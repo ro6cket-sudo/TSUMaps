@@ -4,8 +4,8 @@ import com.example.tsumaps.core.MapConstants
 import com.example.tsumaps.core.Point
 import com.example.tsumaps.core.algorithms.astar.heuristic.Heuristic
 import com.example.tsumaps.core.algorithms.astar.heuristic.OctileHeuristic
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.PriorityQueue
 
@@ -103,6 +103,8 @@ class AStarFinder (
             return@flow
         }
 
+        val iterSkip = 50
+
         val startIdx = start.y * width + start.x
         val endIdx = end.y * width + end.x
 
@@ -181,8 +183,8 @@ class AStarFinder (
                 emit(PathfindingEvent.NodesOpened(newOpened))
             }
 
-            //if (iterCount++ % iterSkip == 0)
-               // delay(delayMs)
+            if (iterCount++ % iterSkip == 0)
+                delay(delayMs)
         }
         emit(PathfindingEvent.PathFound(null))
     }
