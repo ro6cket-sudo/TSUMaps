@@ -34,10 +34,17 @@ import com.example.tsumaps.core.PlaceType
 import com.example.tsumaps.ui.theme.TsuBlue
 import com.example.tsumaps.ui.viewmodels.MapViewModel
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.text.style.TextAlign
+import com.example.tsumaps.core.algorithms.cluster.ClusterMetricType
 
 private enum class SheetMode {PATHFINDING, CLUSTERING}
 
+val clusterColors = listOf(
+    Color.Red, Color.Yellow, Color.Green,
+    Color.Magenta, Color(0xFFFFA500), Color.Cyan,
+    Color(0xFF9C27B0), Color(0xFF00BCD4), Color(0xFF8BC34A), Color(0xFFFF5722)
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +71,9 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
             isClusteringActive = viewModel.isClusteringActive,
             onClusteringClick = { viewModel.toggleClustering() },
             clusterCount = viewModel.clusterCount,
+            isComputingClusters = viewModel.isComputingClusters,
+            selectedMetric = viewModel.selectedMetric,
+            onMetricChange = { viewModel.setClusterMetric(it) },
             onIncrementCluster = {viewModel.incrementClusterCount()},
             onDecrementCluster = {viewModel.decrementClusterCount()},
             onClearPathClick = {viewModel.clearPath()},
@@ -83,12 +93,25 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
                 startPoint = viewModel.startPoint,
                 endPoint = viewModel.endPoint)
 
+            if (viewModel.isClusteringActive && viewModel.clusteredPlaces.isNotEmpty()) {
+                ClusterLegend(
+                    metricName = viewModel.selectedMetric.label,
+                    clusterCount = viewModel.clusterCount,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 12.dp, bottom = 200.dp)
+                )
+            }
+
             viewModel.selectedPlace?.let { place ->
                 PlaceInfoCard(
                     place = place,
-                    onDismiss = {viewModel.clearSelectedPlace()},
+                    clusterIndex = viewModel.clusteredPlaces
+                        .find { it.place.id == place.id }?.clusterIndex,
+                    metricName = if (viewModel.isClusteringActive) viewModel.selectedMetric.label else null,
+                    onDismiss = { viewModel.clearSelectedPlace() },
                     modifier = Modifier
-                        .align (Alignment.TopCenter)
+                        .align(Alignment.TopCenter)
                         .padding(top = 48.dp, start = 16.dp, end = 16.dp)
                 )
             }
@@ -97,10 +120,13 @@ fun MainScreen(viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.vi
 }
 
 @Composable
-fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit,
+fun BottomSheetContent( onBuildPathClick: () -> Unit,isSearching: Boolean,
                        onSelectionModeClick: () -> Unit, onObstacleClick: () -> Unit,
                        onClearObstaclesClick: () -> Unit, isClusteringActive: Boolean,
-                       onClusteringClick: () -> Unit,clusterCount: Int, onIncrementCluster: () -> Unit,
+                       onClusteringClick: () -> Unit,clusterCount: Int, isComputingClusters: Boolean,
+                       selectedMetric: ClusterMetricType,
+                       onMetricChange: (ClusterMetricType) -> Unit,
+                       onIncrementCluster: () -> Unit,
                        onDecrementCluster: () -> Unit, onClearPathClick: () -> Unit,
                        onBuildFinalPathClick: () -> Unit) {
     var selectedMode by remember {mutableStateOf<SheetMode?>(null)}
@@ -110,8 +136,8 @@ fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit,
             .fillMaxWidth()
             .padding(16.dp, 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp))
-    {
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -164,7 +190,7 @@ fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit,
                     )
                 }
                 Row(
-                    modifier = Modifier,
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     ActionButton(
@@ -184,7 +210,7 @@ fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit,
                     )
                 }
                 Row(
-                    modifier = Modifier,
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     ActionButton(
@@ -212,47 +238,73 @@ fun BottomSheetContent(isSearching: Boolean, onBuildPathClick: () -> Unit,
             exit = shrinkVertically()
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "Количество кластеров: ",
-                        fontSize = 14.sp,
-                        color = Color.Black
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    OutlinedButton(
-                        onClick = onDecrementCluster,
-                        modifier = Modifier.size(36.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(0.dp)
+                Text("Метрика расстояния:", fontSize = 13.sp, color = Color.DarkGray,
+                    modifier = Modifier.align(Alignment.Start))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ClusterMetricType.entries.forEach { metric ->
+                        val selected = selectedMetric == metric
+                        Button(
+                            onClick = { onMetricChange(metric) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (selected) Color(0xFF1565C0) else Color(0xFFE0E0E0),
+                                    contentColor = if (selected) Color.White else Color.Black)
+                            ) {
+                                Text(
+                                    metric.label,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                                ) }
+                            }
+                        }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("-", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Количество кластеров: ",
+                            fontSize = 14.sp,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        OutlinedButton(
+                            onClick = onDecrementCluster,
+                            modifier = Modifier.size(36.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text("-", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Text(
+                            text = "$clusterCount",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.width(36.dp),
+                            textAlign = TextAlign.Center
+                        )
+                        OutlinedButton(
+                            onClick = onIncrementCluster,
+                            modifier = Modifier.size(36.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text("+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
-                    Text(
-                        text = "$clusterCount",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.width(36.dp),
-                        textAlign = TextAlign.Center
+                    ActionButton(
+                        text = when {
+                            isComputingClusters -> "Вычисление..."
+                            isClusteringActive -> "Скрыть кластеры"
+                            else -> "Применить (${selectedMetric.label})"
+                        },
+                        containerColor = if (isClusteringActive) Color(0xFF4CAF50) else TsuBlue,
+                        contentColor = Color.White,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onClusteringClick
                     )
-                    OutlinedButton(
-                        onClick = onIncrementCluster,
-                        modifier = Modifier.size(36.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text("+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-                ActionButton(
-                    text = if (isClusteringActive) "Скрыть кластеры" else "Кластеризация",
-                    containerColor = if (isClusteringActive) Color(0xFF4CAF50) else TsuBlue,
-                    contentColor = Color.White,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onClusteringClick
-                )
             }
         }
     }
@@ -279,7 +331,9 @@ fun ActionButton(
 }
 
 @Composable
-fun PlaceInfoCard(place: Place, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+fun PlaceInfoCard(place: Place, onDismiss: () -> Unit,
+                  modifier: Modifier = Modifier, clusterIndex: Int? = null,
+                  metricName: String? = null) {
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -287,6 +341,14 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit, modifier: Modifier = Modi
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            if (clusterIndex != null) {
+                Box(
+                    modifier = Modifier.size(12.dp).background(
+                        clusterColors[clusterIndex % clusterColors.size], CircleShape
+                    )
+                )
+                Spacer(Modifier.width(8.dp))
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -324,6 +386,43 @@ fun PlaceInfoCard(place: Place, onDismiss: () -> Unit, modifier: Modifier = Modi
                 color = Color.Gray
             )
 
+            if (clusterIndex != null && metricName != null) {
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.size(10.dp).background(
+                            clusterColors[clusterIndex % clusterColors.size], CircleShape
+                        )
+                    )
+                    Text(
+                        "Кластер ${clusterIndex + 1} · $metricName",
+                        fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+        }
+    }
+}
+@Composable
+fun ClusterLegend(metricName: String, clusterCount: Int, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(metricName, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            for (i in 0 until clusterCount) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(modifier = Modifier.size(10.dp).background(clusterColors[i % clusterColors.size], CircleShape))
+                    Text("Кластер ${i + 1}", fontSize = 11.sp, color = Color.DarkGray)
+                }
+            }
         }
     }
 }

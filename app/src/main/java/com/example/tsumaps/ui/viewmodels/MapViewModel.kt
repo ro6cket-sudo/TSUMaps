@@ -2,6 +2,7 @@ package com.example.tsumaps.ui.viewmodels
 
 import android.app.Application
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -14,11 +15,15 @@ import com.example.tsumaps.core.PlaceStorage
 import com.example.tsumaps.core.Point
 import com.example.tsumaps.core.algorithms.astar.AStarFinder
 import com.example.tsumaps.core.algorithms.astar.PathfindingEvent
+import com.example.tsumaps.core.algorithms.cluster.ClusterMetricType
 import com.example.tsumaps.core.algorithms.cluster.ClusteredPlace
 import com.example.tsumaps.core.algorithms.cluster.Clustering
+import com.example.tsumaps.core.algorithms.cluster.EuclideanMetric
+import com.example.tsumaps.core.algorithms.cluster.KMedoids
+import com.example.tsumaps.core.algorithms.cluster.ManhattanMetric
+import com.example.tsumaps.core.algorithms.cluster.PathDistanceMetric
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import kotlin.math.sqrt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
@@ -42,6 +47,13 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     var isObstacleMode by mutableStateOf(false)
     val customObstacles = mutableStateListOf<Point>()
     private var pathfindingJob: Job? = null
+    private val pathDistanceMetric = PathDistanceMetric()
+    var selectedMetric by mutableStateOf(ClusterMetricType.EUCLIDEAN)
+        private set
+
+    var isComputingClusters by mutableStateOf(false)
+        private set
+
 
     val visiblePlaces: List<Place>
         get() = PlaceStorage.places
@@ -67,21 +79,31 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadMapData() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val jsonString = getApplication<Application>().assets
-                    .open("map_array.json")
-                    .bufferedReader()
-                    .use { it.readText() }
+                val booleanGrid = BooleanArray(MapConstants.GRID_WIDTH * MapConstants.GRID_HEIGHT)
+                var index = 0
 
-                val jsonObject = JSONObject(jsonString)
-                val dataArray = jsonObject.getJSONArray("data")
+                getApplication<Application>().assets.open("map_array.json").bufferedReader().use { reader ->
+                    var ch = reader.read()
+                    while (ch != -1 && ch.toChar() != '[') ch = reader.read()
 
-                val booleanGrid = BooleanArray(dataArray.length())
-
-                for (i in 0 until dataArray.length()) {
-                    booleanGrid[i] = dataArray.getInt(i) == 0
+                    var value: Int
+                    ch = reader.read()
+                    while (ch != -1 && index < booleanGrid.size) {
+                        val c = ch.toChar()
+                        value = (c - '0')
+                        if (c.isDigit()) {
+                            if (value == 0) {
+                                booleanGrid[index++] = true
+                            } else {
+                                booleanGrid[index++] = false
+                            }
+                        }
+                        ch = reader.read()
+                    }
                 }
                 mapGrid = booleanGrid
                 pathFinder.setBaseMap(booleanGrid)
+                pathDistanceMetric.initialize(booleanGrid)
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -254,9 +276,29 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         if (isClusteringActive) {
             clusteredPlaces = emptyList()
             isClusteringActive = false
-        } else {
-            clusteredPlaces = Clustering.kMeans(PlaceStorage.places, clusterCount)
-            isClusteringActive = true
+            return
+        }
+        viewModelScope.launch(Dispatchers.Default) {
+            withContext(Dispatchers.Main) {
+                isComputingClusters = true
+            }
+
+            val metric = when (selectedMetric) {
+                ClusterMetricType.EUCLIDEAN -> EuclideanMetric()
+                ClusterMetricType.MANHATTAN -> ManhattanMetric()
+                ClusterMetricType.PEDESTRIAN -> {
+                    val total = PlaceStorage.places.size * (PlaceStorage.places.size - 1) / 2
+                    pathDistanceMetric
+                }
+            }
+
+            val result = KMedoids.cluster(PlaceStorage.places, clusterCount, metric)
+
+            withContext(Dispatchers.Main) {
+                clusteredPlaces = result
+                isClusteringActive = true
+                isComputingClusters = false
+            }
         }
     }
 
@@ -297,5 +339,12 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     fun decrementClusterCount() {
         clusterCount = (clusterCount - 1).coerceAtLeast(2)
+    }
+
+    fun setClusterMetric(type: ClusterMetricType) {
+        if (selectedMetric == type) return
+        selectedMetric = type
+        clusteredPlaces = emptyList()
+        isClusteringActive = false
     }
 }
