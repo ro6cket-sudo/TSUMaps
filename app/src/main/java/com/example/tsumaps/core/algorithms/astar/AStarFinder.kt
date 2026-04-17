@@ -24,7 +24,7 @@ class AStarFinder (
     private var iteration = 1
 
     @Volatile
-    private var iterSkip: Int = 50
+    private var iterSkip: Int = 1
 
     override fun setBaseMap(walkableMap: BooleanArray) {
         this.baseGrid = walkableMap
@@ -216,5 +216,6 @@ class AStarFinder (
 
     override fun setAnimationSkip(skip: Int) {
         this.iterSkip = skip.coerceAtLeast(1) * 5
+        if (skip == 1) this.iterSkip = 1
     }
 }

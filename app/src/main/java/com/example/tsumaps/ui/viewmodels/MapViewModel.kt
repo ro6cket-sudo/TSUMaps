@@ -203,24 +203,32 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         val start = startPoint
         val end = endPoint
 
+        if (start == null || end == null) {
+            toastMessage = "Сначала установите точки"
+            return
+        }
+
+        pathfindingJob?.cancel()
         openNodes.clear()
         closedNodes.clear()
         finalPath.clear()
 
-        if (start != null && end != null) {
-            viewModelScope.launch(Dispatchers.Default) {
-                isSearching = true
+        pathFinder.clearDynamicObstacles()
+        pathFinder.setObstacles(customObstacles.toList())
 
-                val path = pathFinder.findPath(start, end)
+        viewModelScope.launch(Dispatchers.Default) {
+            withContext(Dispatchers.Main) {isSearching = true}
 
-                withContext(Dispatchers.Main) {
-                    calculatedPath = path ?: emptyList()
-                    isSearching = false
-                    if (path == null) toastMessage = "Путь не найден"
+            val path = pathFinder.findPath(start,end)
+
+            withContext(Dispatchers.Main) {
+                isSearching = false
+                if (path == null) {
+                    toastMessage = "Путь не найден"
+                } else {
+                    finalPath.addAll(path)
                 }
             }
-        } else {
-            toastMessage = "Сначала установите точки"
         }
     }
 
@@ -257,7 +265,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         finalPath.clear()
 
         pathfindingJob = viewModelScope.launch {
-            pathFinder.findPathAnimated(start, end).collect { event ->
+            pathFinder.findPathAnimated(start, end, 30).collect { event ->
                 when (event) {
                     is PathfindingEvent.NodesOpened -> {
                         openNodes.addAll(event.points)
