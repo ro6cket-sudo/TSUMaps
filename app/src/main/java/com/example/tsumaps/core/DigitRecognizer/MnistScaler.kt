@@ -10,7 +10,7 @@ fun scale(original: List<List<Int>>, newWidth: Int, newHeight: Int): List<List<I
 
     for (y in 0 until newHeight){
         for (x in 0 until newWidth){
-            val scaledX = (x * scaleHeight)
+            val scaledX = (x * scaleWidth)
             val scaledY = (y * scaleHeight)
 
             val x1 = scaledX.toInt()

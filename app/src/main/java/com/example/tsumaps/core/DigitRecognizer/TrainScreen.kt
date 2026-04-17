@@ -31,7 +31,8 @@ public fun TrainingScreen(){
                     }
                 }
             },
-            enabled = !isTraining
+            enabled = !isTraining,
+            modifier = Modifier.fillMaxSize()
         ) {
             Text(if (isTraining) "Идет обучение" else "Запустить обучение")
         }

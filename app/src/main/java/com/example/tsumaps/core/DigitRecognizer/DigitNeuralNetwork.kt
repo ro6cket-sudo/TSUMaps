@@ -22,33 +22,38 @@ open class DigitNeuralNetwork(context: Context) {
     }
 
     fun loadWeightsFromJson(context: Context){
-        val jsonString = context.assets.open("weights(python).json").bufferedReader().use {it.readText()}
-        val json = JSONObject(jsonString)
+        try{
+            val jsonString =
+                context.assets.open("weights_new.json").bufferedReader().use { it.readText() }
+            val json = JSONObject(jsonString)
 
-        val w1json = json.getJSONArray("w1")
-        for (i in 0 until INPUT_SIZE){
-            val row = w1json.getJSONArray(i)
-            for (j in 0 until HIDDEN_SIZE){
-                w1[i][j] = row.getDouble(j).toFloat()
+            val w1json = json.getJSONArray("w1")
+            for (i in 0 until INPUT_SIZE) {
+                val row = w1json.getJSONArray(i)
+                for (j in 0 until HIDDEN_SIZE) {
+                    w1[i][j] = row.getDouble(j).toFloat()
+                }
             }
-        }
 
-        val b1json = json.getJSONArray("b1")
-        for (i in 0 until HIDDEN_SIZE){
-            b1[i] = b1json.getDouble(i).toFloat()
-        }
-
-        val w2json = json.getJSONArray("w2")
-        for (i in 0 until HIDDEN_SIZE){
-            val row = w2json.getJSONArray(i)
-            for (j in 0 until OUTPUT_SIZE){
-                w2[i][j] = row.getDouble(j).toFloat()
+            val b1json = json.getJSONArray("b1")
+            for (i in 0 until HIDDEN_SIZE) {
+                b1[i] = b1json.getDouble(i).toFloat()
             }
-        }
 
-        val b2json = json.getJSONArray("b2")
-        for (i in 0 until OUTPUT_SIZE){
-            b2[i] = b2json.getDouble(i).toFloat()
+            val w2json = json.getJSONArray("w2")
+            for (i in 0 until HIDDEN_SIZE) {
+                val row = w2json.getJSONArray(i)
+                for (j in 0 until OUTPUT_SIZE) {
+                    w2[i][j] = row.getDouble(j).toFloat()
+                }
+            }
+
+            val b2json = json.getJSONArray("b2")
+            for (i in 0 until OUTPUT_SIZE) {
+                b2[i] = b2json.getDouble(i).toFloat()
+            }
+        }catch (error: Exception){
+            android.util.Log.w("AI", "Старые веса не подходят по размеру или отсутвуют. Начинаем с чистого листа!")
         }
     }
 
@@ -63,10 +68,11 @@ open class DigitNeuralNetwork(context: Context) {
     }
 
     fun claccify(grid: List<List<Int>>): Int{
+        val centeredGrid = preprocessCanvas(grid)
         val input = FloatArray(INPUT_SIZE)
-        for (i in 0 until 50){
-            for ( j in 0 until 50){
-                input[j * 50 + i] = grid[i][j].toFloat()
+        for (y in 0 until 50){
+            for ( x in 0 until 50){
+                input[y * 50 + x] = centeredGrid[x][y].toFloat()
             }
         }
         val (_, output) = NeuralNetwork(input)

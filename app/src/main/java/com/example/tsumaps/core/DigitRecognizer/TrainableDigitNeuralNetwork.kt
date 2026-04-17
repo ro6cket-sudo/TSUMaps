@@ -19,41 +19,24 @@ class TrainableDigitNeuralNetwork(private val context: Context) : DigitNeuralNet
     private fun randomizeWeights(){
         for (i in 0 until INPUT_SIZE){
             for (j in 0 until HIDDEN_SIZE){
-                w1[i][j] = Random.Default.nextFloat() * 0.2f - 0.1f
+                w1[i][j] = Random.Default.nextFloat() * (2f - 1f) * 0.5f
             }
         }
 
         for (i in 0 until HIDDEN_SIZE){
             for (j in 0 until OUTPUT_SIZE){
-                w2[i][j] = Random.Default.nextFloat() * 0.2f - 0.1f
+                w2[i][j] = Random.Default.nextFloat() * (2f - 1f) * 0.1f
             }
         }
-    }
-
-    private fun shiftImage(grid: List<List<Int>>): List<List<Int>>{
-        val shiftX = Random.nextInt(-3, 4)
-        val shiftY = Random.nextInt(-3, 4)
-        val newGrid = MutableList(50) { MutableList(50) {0} }
-
-        for (y in 0 until 50){
-            for (x in 0 until 50){
-                val oldX = x - shiftX
-                val oldY = y - shiftY
-                if (oldX in 0 until 50 && oldY in 0 until 50){
-                    newGrid[y][x] = grid[oldY][oldX]
-                }
-            }
-        }
-        return newGrid
     }
 
     private fun trainSingleImage(grid: List<List<Int>>, correctNumber: Int, learningSpeed: Float){
         val L2 = 0.0001F
 
         val input = FloatArray(INPUT_SIZE)
-        for (i in 0 until 50){
-            for ( j in 0 until 50){
-                input[j * 50 + i] = grid[i][j].toFloat()
+        for (y in 0 until 50){
+            for ( x in 0 until 50){
+                input[y * 50 + x] = grid[y][x].toFloat()
             }
         }
 
@@ -103,8 +86,7 @@ class TrainableDigitNeuralNetwork(private val context: Context) : DigitNeuralNet
                 if (claccify(grid) == number){
                     correctAnswers++
                 }
-                val shiftGrid = shiftImage(grid)
-                trainSingleImage(shiftGrid, number, 0.01f)
+                trainSingleImage(grid, number, 0.01f)
             }
             val accuracy = (correctAnswers.toFloat() / dataset.size) * 100
             Log.d("AI", "Эпоха $epoch завершена. Точность: $accuracy")
@@ -143,10 +125,11 @@ class TrainableDigitNeuralNetwork(private val context: Context) : DigitNeuralNet
                 }
 
                 val newImage = scale(image, 50, 50)
-                if (claccify(newImage) == label){
+                val finalImage = preprocessCanvas(newImage)
+                if (claccify(finalImage) == label){
                     correctAnswers++
                 }
-                trainSingleImage(shiftImage(newImage), label, 0.01f)
+                trainSingleImage(finalImage, label, 0.01f)
                 totalProcessed++
 
                 if (totalProcessed % 5000 == 0){
