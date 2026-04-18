@@ -18,13 +18,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ResultSection(place: String, path: List<String>){
+fun ResultSection(place: String, path: List<String>) {
     Card(
-        modifier = Modifier.padding(top = 24.dp).fillMaxWidth(),
+        modifier = Modifier
+            .padding(top = 24.dp)
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xE8F5E9FF))
-    ){
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("ИТОГ: $place", style = MaterialTheme.typography.headlineSmall, color = Color(0xFF1B5E20))
+            Text(
+                "ИТОГ: $place",
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color(0xFF1B5E20)
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
             Text("Логика дерева:", fontWeight = FontWeight.Bold)

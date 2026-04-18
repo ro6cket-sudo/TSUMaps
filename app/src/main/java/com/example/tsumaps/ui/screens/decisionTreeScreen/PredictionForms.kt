@@ -15,12 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.tsumaps.ui.theme.TsuBlue
 import com.example.tsumaps.ui.theme.TsuLightBlue
+import com.example.tsumaps.ui.viewmodels.DecisionTreeViewModel
 
 @Composable
 fun PredictionForm(viewModel: DecisionTreeViewModel) {
-//    val features = listOf("location", "budget", "time_available",
-//        "food_type", "queue_tolerance", "weather" )
-
     val features = viewModel.availableFeatures
 
     Card(
@@ -30,9 +28,9 @@ fun PredictionForm(viewModel: DecisionTreeViewModel) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Ваша ситуация:", style = MaterialTheme.typography.titleLarge)
 
-            if (features.isEmpty()){
+            if (features.isEmpty()) {
                 Text("Признаки не найдены", color = MaterialTheme.colorScheme.error)
-            }else {
+            } else {
                 features.forEach { feature ->
                     OutlinedTextField(
                         value = viewModel.userSelections[feature] ?: "",
@@ -46,7 +44,7 @@ fun PredictionForm(viewModel: DecisionTreeViewModel) {
             }
 
             Button(
-                onClick = {viewModel.makePrediction()},
+                onClick = { viewModel.makePrediction() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),

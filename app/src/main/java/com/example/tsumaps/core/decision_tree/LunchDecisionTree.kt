@@ -12,27 +12,26 @@ class LunchDecisionTree(
     var featureNames: List<String> = emptyList()
 
     fun parseCsv(cscText: String): List<DataRow> {
-        val lines = cscText.trim().lines().filter {it.isNotBlank()}
+        val lines = cscText.trim().lines().filter { it.isNotBlank() }
         if (lines.isEmpty()) throw IllegalArgumentException("CSV пуст.")
 
-        val headers = lines.first().split(",").map {it.trim()}
+        val headers = lines.first().split(",").map { it.trim() }
         val dataset = mutableListOf<DataRow>()
 
-        featureNames = headers.filter{it != targetColumn}
+        featureNames = headers.filter { it != targetColumn }
 
 
 
-        for (i in 1 until lines.size){
-            val values = lines[i].split(",").map {it.trim()}
+        for (i in 1 until lines.size) {
+            val values = lines[i].split(",").map { it.trim() }
             if (values.size < headers.size) continue
             val features = mutableMapOf<String, String>()
             var target = ""
 
-            for (j in headers.indices){
-                if (headers[j] == targetColumn){
+            for (j in headers.indices) {
+                if (headers[j] == targetColumn) {
                     target = values[j].trim()
-                }
-                else{
+                } else {
                     features[headers[j]] = values[j].trim()
                 }
             }
@@ -42,12 +41,12 @@ class LunchDecisionTree(
     }
 
     private fun calculateGini(data: List<DataRow>): Float {
-        if (data.isEmpty()){
+        if (data.isEmpty()) {
             return 0.0F
         }
         val counts = data.groupingBy { it.target }.eachCount()
         var gini = 1.0F
-        for (count in counts.values){
+        for (count in counts.values) {
             val prob = count.toFloat() / data.size
             gini -= prob * prob
         }
@@ -55,14 +54,14 @@ class LunchDecisionTree(
     }
 
     private fun calculateEntropy(data: List<DataRow>): Float {
-        if (data.isEmpty()){
+        if (data.isEmpty()) {
             return 0.0F
         }
         val counts = data.groupingBy { it.target }.eachCount()
         var entropy = 0.0f
-        for (count in counts.values){
+        for (count in counts.values) {
             val prob = count.toFloat() / data.size
-            if (prob > 0 ){
+            if (prob > 0) {
                 entropy -= prob * log2(prob)
             }
         }
@@ -75,36 +74,42 @@ class LunchDecisionTree(
         return (calculateGini(data) * 2 + calculateEntropy(data)) / 2.0F
     }
 
-    fun train(data: List<DataRow>, depth: Int, metric: MetricType){
+    fun train(data: List<DataRow>, depth: Int, metric: MetricType) {
         this.maxDepth = depth
         this.metricType = metric
         val initialFeatures = featureNames.toSet()
         root = buildTree(data, 0, initialFeatures)
     }
 
-    private fun buildTree(data: List<DataRow>, depth: Int, availableFeatures: Set<String>): TreeNode{
-        val majorityClass = data.groupingBy { it.target }.eachCount().maxByOrNull { it.value }?.key ?: ""
+    private fun buildTree(
+        data: List<DataRow>,
+        depth: Int,
+        availableFeatures: Set<String>
+    ): TreeNode {
+        val majorityClass =
+            data.groupingBy { it.target }.eachCount().maxByOrNull { it.value }?.key ?: ""
 
         val currentImpurity = calculateImpurity(data)
 
-        if (data.isEmpty() || data.map {it.target}.distinct().size == 1
-            || depth >= maxDepth || currentImpurity == 0.0f){
+        if (data.isEmpty() || data.map { it.target }.distinct().size == 1
+            || depth >= maxDepth || currentImpurity == 0.0f
+        ) {
             return TreeNode(isLeaf = true, prediction = majorityClass)
         }
 
         var bestFeature = ""
         var bestImpurity = Float.MAX_VALUE
 
-        for (feature in availableFeatures){
+        for (feature in availableFeatures) {
             val impurity = calculateSplitImpurity(data, feature)
-            if (impurity < bestImpurity){
+            if (impurity < bestImpurity) {
                 bestImpurity = impurity
                 bestFeature = feature
             }
         }
 
         val infGain = currentImpurity - bestImpurity
-        if (infGain <= 0.001f){
+        if (infGain <= 0.001f) {
             return TreeNode(isLeaf = true, prediction = majorityClass)
         }
 
@@ -120,12 +125,12 @@ class LunchDecisionTree(
     }
 
     private fun calculateSplitImpurity(data: List<DataRow>, feature: String): Float {
-        if (data.isEmpty()){
+        if (data.isEmpty()) {
             return 0.0F
         }
         var splitImpurity = 0.0f
         val group = data.groupBy { it.features[feature] }
-        for (subset in group.values){
+        for (subset in group.values) {
             val normalize = subset.size.toFloat() / data.size
             splitImpurity += normalize * calculateImpurity(subset)
         }
@@ -136,7 +141,7 @@ class LunchDecisionTree(
         val path = mutableListOf<String>()
         var currentNode = root ?: return Pair("Нет данных", path)
 
-        while (!currentNode.isLeaf){
+        while (!currentNode.isLeaf) {
             val feature = currentNode.feature!!
             val value = input[feature] ?: "unknow"
             path.add("$feature: $value")
@@ -151,18 +156,18 @@ class LunchDecisionTree(
         return Pair(currentNode.prediction ?: "Ошибка", path)
     }
 
-    private fun pruning(node: TreeNode){
-        if (node.isLeaf){
+    private fun pruning(node: TreeNode) {
+        if (node.isLeaf) {
             return
         }
 
-        for (child in node.children.values){
+        for (child in node.children.values) {
             pruning(child)
         }
 
-        if (node.children.values.isNotEmpty() && node.children.values.all { it.isLeaf }){
+        if (node.children.values.isNotEmpty() && node.children.values.all { it.isLeaf }) {
             val firstPrediction = node.children.values.first().prediction
-            if (node.children.values.all { it.prediction == firstPrediction }){
+            if (node.children.values.all { it.prediction == firstPrediction }) {
                 node.isLeaf = true
                 node.prediction = firstPrediction
                 node.children.clear()
@@ -171,7 +176,7 @@ class LunchDecisionTree(
         }
     }
 
-    fun optimize(){
-        root?.let { pruning(it)}
+    fun optimize() {
+        root?.let { pruning(it) }
     }
 }

@@ -15,9 +15,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tsumaps.ui.theme.TsuBlue
+import com.example.tsumaps.ui.viewmodels.DecisionTreeViewModel
 
 @Composable
-fun DecisionTreeScreen(viewModel: DecisionTreeViewModel = viewModel()){
+fun DecisionTreeScreen(viewModel: DecisionTreeViewModel = viewModel()) {
     val scrollState = rememberScrollState()
 
     Column(
@@ -37,7 +38,7 @@ fun DecisionTreeScreen(viewModel: DecisionTreeViewModel = viewModel()){
 
         CsvInputSection(viewModel)
 
-        viewModel.errorMassage?.let {error ->
+        viewModel.errorMassage?.let { error ->
             Text(
                 text = error,
                 color = MaterialTheme.colorScheme.error,
@@ -47,18 +48,18 @@ fun DecisionTreeScreen(viewModel: DecisionTreeViewModel = viewModel()){
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        viewModel.tree?.root?.let {rootNode ->
+        viewModel.tree?.root?.let { rootNode ->
             Text("Структура дерева решений:", style = MaterialTheme.typography.titleMedium)
             TreeVisualizer(rootNode)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (viewModel.tree != null){
+        if (viewModel.tree != null) {
             PredictionForm(viewModel)
         }
 
-        viewModel.predictionResult?.let {(place, path) ->
+        viewModel.predictionResult?.let { (place, path) ->
             ResultSection(place, path)
         }
     }

@@ -18,9 +18,9 @@ import com.example.tsumaps.core.decision_tree.TreeNode
 import com.example.tsumaps.ui.theme.TsuBlue
 
 @Composable
-fun TreeVisualizer(node: TreeNode, depth: Int = 0){
+fun TreeVisualizer(node: TreeNode, depth: Int = 0) {
     Column(modifier = Modifier.padding(start = (depth * 12).dp, top = 4.dp)) {
-        if (node.isLeaf){
+        if (node.isLeaf) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Place, contentDescription = null, tint = Color.Green)
                 Text(
@@ -31,11 +31,17 @@ fun TreeVisualizer(node: TreeNode, depth: Int = 0){
             }
         } else {
             Column {
-                Text("Признак: ${node.feature}",
+                Text(
+                    "Признак: ${node.feature}",
                     color = TsuBlue,
-                    fontWeight = FontWeight.Medium)
+                    fontWeight = FontWeight.Medium
+                )
                 node.children.forEach { (value, child) ->
-                    Text("если '$value':", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Text(
+                        "если '$value':",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
                     TreeVisualizer(child, depth + 1)
                 }
             }

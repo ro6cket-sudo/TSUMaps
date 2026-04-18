@@ -2,8 +2,7 @@ package com.example.tsumaps.core
 
 object MapConstants {
     const val GRID_WIDTH = 452
-    const val GRID_HEIGHT= 469
-
+    const val GRID_HEIGHT = 469
     const val BOTTOM_RIGHT_LAT = 56.46397962115171
     const val BOTTOM_RIGHT_LON = 84.95782628709338
     const val TOP_LEFT_LAT = 56.47373331148776

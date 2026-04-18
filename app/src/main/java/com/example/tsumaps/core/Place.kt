@@ -18,7 +18,7 @@ data class Place(
     val type: PlaceType,
     val openTime: String,
     val closeTime: String,
-    val point: Point = Point.of(0,0),
+    val point: Point = Point.of(0, 0),
     val menu: Set<FoodItem> = emptySet()
 ) {
     val openTimeInt: Int = openTime.toMinutes()
@@ -31,6 +31,7 @@ data class Place(
         } else {
             closeTimeInt - currentTime
         }
+
     fun isOpen(currentTime: Int): Boolean =
         if (isOvernight) {
             currentTime >= openTimeInt || currentTime < closeTimeInt

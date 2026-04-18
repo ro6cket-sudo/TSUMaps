@@ -64,7 +64,7 @@ import com.example.tsumaps.core.algorithms.genetic.SelectionType
 import com.example.tsumaps.ui.theme.TsuBlue
 import com.example.tsumaps.ui.viewmodels.MapViewModel
 
-enum class SheetMode { PATHFINDING, CLUSTERING, ANTS, GENETIC}
+enum class SheetMode { PATHFINDING, CLUSTERING, ANTS, GENETIC }
 
 val clusterColors = listOf(
     Color.Red, Color.Yellow, Color.Green,
@@ -83,7 +83,8 @@ fun MainScreen(
 
     androidx.compose.runtime.LaunchedEffect(viewModel.toastMessage) {
         viewModel.toastMessage?.let { message ->
-            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT)
+                .show()
             viewModel.clearToast()
         }
     }
@@ -468,7 +469,9 @@ fun BottomSheetContent(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (selected) Color(0xFF1565C0) else Color(0xFFE0E0E0),
+                                containerColor = if (selected) Color(0xFF1565C0) else Color(
+                                    0xFFE0E0E0
+                                ),
                                 contentColor = if (selected) Color.White else Color.Black
                             )
                         ) {
@@ -747,7 +750,9 @@ private fun AntsPanel(
                         notReady -> hintText.ifEmpty { "Запустить" }
                         else -> "Запустить"
                     },
-                    containerColor = if (canRun && !isRunning) Color(0xFF2E7D32) else Color(0xFFB0BEC5),
+                    containerColor = if (canRun && !isRunning) Color(0xFF2E7D32) else Color(
+                        0xFFB0BEC5
+                    ),
                     contentColor = Color.White,
                     modifier = Modifier.weight(1f),
                     onClick = { if (canRun && !isRunning) onRunClick() }
@@ -759,7 +764,9 @@ private fun AntsPanel(
                         notReady -> hintText.ifEmpty { "Анимировать" }
                         else -> "Анимировать"
                     },
-                    containerColor = if (canRun && !isRunning) Color(0xFF6A1B9A) else Color(0xFFB0BEC5),
+                    containerColor = if (canRun && !isRunning) Color(0xFF6A1B9A) else Color(
+                        0xFFB0BEC5
+                    ),
                     contentColor = Color.White,
                     modifier = Modifier.weight(1f),
                     onClick = { if (canRun && !isRunning) onRunAnimatedClick() }
@@ -890,9 +897,11 @@ fun PlaceInfoCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Box(
-                        modifier = Modifier.size(10.dp).background(
-                            clusterColors[clusterIndex % clusterColors.size], CircleShape
-                        )
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(
+                                clusterColors[clusterIndex % clusterColors.size], CircleShape
+                            )
                     )
                     Text(
                         "Кластер ${clusterIndex + 1} · $metricName",
@@ -912,11 +921,21 @@ fun ClusterLegend(metricName: String, clusterCount: Int, modifier: Modifier = Mo
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             Text(metricName, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             for (i in 0 until clusterCount) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Box(modifier = Modifier.size(10.dp).background(clusterColors[i % clusterColors.size], CircleShape))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(clusterColors[i % clusterColors.size], CircleShape)
+                    )
                     Text("Кластер ${i + 1}", fontSize = 11.sp, color = Color.DarkGray)
                 }
             }

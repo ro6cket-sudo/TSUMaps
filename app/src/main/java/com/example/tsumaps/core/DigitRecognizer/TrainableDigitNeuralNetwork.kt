@@ -184,7 +184,7 @@ class TrainableDigitNeuralNetwork(private val context: Context) : DigitNeuralNet
         json.put("b2", b2json)
 
         try {
-            val file = File(context.filesDir, "weights(python).json")
+            val file = File(context.filesDir, "weights.json")
             file.writeText(json.toString())
             android.util.Log.d("AI", "Файл успешно сохранен по пути:${file.absolutePath}")
         } catch (e: Exception) {

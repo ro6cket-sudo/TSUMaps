@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.registerForAllProfilingResults
 import com.example.tsumaps.ui.theme.TsuBlue
+import com.example.tsumaps.ui.viewmodels.DecisionTreeViewModel
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -35,29 +36,35 @@ import java.io.InputStreamReader
 fun CsvInputSection(viewModel: DecisionTreeViewModel) {
 
     val context = LocalContext.current
-    val getFileLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()){
-        uri: Uri? ->
-        uri?.let {
-            try{
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val reader = BufferedReader(InputStreamReader(inputStream))
-                val text = reader.readText()
-                reader.close()
-                viewModel.csvText = text
-                Toast.makeText(context, "Файл успешно загружен", Toast.LENGTH_SHORT).show()
-            } catch (error: Exception){
-                Toast.makeText(context, "Ошибка чтения файла: ${error.message}", Toast.LENGTH_SHORT).show()
+    val getFileLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let {
+                try {
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    val reader = BufferedReader(InputStreamReader(inputStream))
+                    val text = reader.readText()
+                    reader.close()
+                    viewModel.csvText = text
+                    Toast.makeText(context, "Файл успешно загружен", Toast.LENGTH_SHORT).show()
+                } catch (error: Exception) {
+                    Toast.makeText(
+                        context,
+                        "Ошибка чтения файла: ${error.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
-    }
 
     Card(elevation = CardDefaults.cardElevation(4.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             OutlinedTextField(
                 value = viewModel.csvText,
-                onValueChange = { viewModel.csvText = it},
-                label = {Text("Вставьте CSV данные.")},
-                modifier = Modifier.fillMaxWidth().height((150.dp)),
+                onValueChange = { viewModel.csvText = it },
+                label = { Text("Вставьте CSV данные.") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height((150.dp)),
                 textStyle = TextStyle(fontSize = 12.sp)
             )
 
@@ -71,10 +78,13 @@ fun CsvInputSection(viewModel: DecisionTreeViewModel) {
                 Text("Выбрать CSV файл с устройства.")
             }
 
-            Text("Макс. глубина дерева: ${viewModel.maxDepth.toInt()}", fontWeight = FontWeight.Bold)
+            Text(
+                "Макс. глубина дерева: ${viewModel.maxDepth.toInt()}",
+                fontWeight = FontWeight.Bold
+            )
             Slider(
                 value = viewModel.maxDepth,
-                onValueChange = {viewModel.maxDepth = it},
+                onValueChange = { viewModel.maxDepth = it },
                 valueRange = 1f..10f,
                 steps = 9
 
@@ -83,13 +93,13 @@ fun CsvInputSection(viewModel: DecisionTreeViewModel) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = viewModel.isOptimized,
-                    onCheckedChange = {viewModel.isOptimized = it}
+                    onCheckedChange = { viewModel.isOptimized = it }
                 )
                 Text("Оптимизировать дерево (Бонус).")
             }
 
             Button(
-                onClick = {viewModel.buildingTree()},
+                onClick = { viewModel.buildingTree() },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = TsuBlue)
             ) {

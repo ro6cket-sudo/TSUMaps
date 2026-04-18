@@ -1,5 +1,6 @@
 package com.example.tsumaps
 
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -52,6 +53,8 @@ import kotlin.math.sqrt
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -149,7 +152,8 @@ fun TsuMapScreen(
                                         if (!isTap && change.pressed) {
                                             change.consume()
                                             if (viewModel.isObstacleMode) {
-                                                val cellSize = size.width.toFloat() / MapConstants.GRID_WIDTH
+                                                val cellSize =
+                                                    size.width.toFloat() / MapConstants.GRID_WIDTH
                                                 val mapX = (change.position.x - offset.x) / scale
                                                 val mapY = (change.position.y - offset.y) / scale
                                                 val gridX = (mapX / cellSize).toInt()
@@ -164,7 +168,8 @@ fun TsuMapScreen(
                                         lastPosition = change.position
 
                                         if (!change.pressed && isTap) {
-                                            val cellSize = size.width.toFloat() / MapConstants.GRID_WIDTH
+                                            val cellSize =
+                                                size.width.toFloat() / MapConstants.GRID_WIDTH
                                             val mapX = (down.position.x - offset.x) / scale
                                             val mapY = (down.position.y - offset.y) / scale
                                             val gridX = (mapX / cellSize).toInt()
@@ -215,10 +220,18 @@ fun TsuMapScreen(
                 val cellSize = size.width / MapConstants.GRID_WIDTH
 
                 startPoint?.let {
-                    drawCircle(Color.Green, radius = 10f, center = Offset(it.x * cellSize, it.y * cellSize))
+                    drawCircle(
+                        Color.Green,
+                        radius = 10f,
+                        center = Offset(it.x * cellSize, it.y * cellSize)
+                    )
                 }
                 endPoint?.let {
-                    drawCircle(Color.Red, radius = 10f, center = Offset(it.x * cellSize, it.y * cellSize))
+                    drawCircle(
+                        Color.Red,
+                        radius = 10f,
+                        center = Offset(it.x * cellSize, it.y * cellSize)
+                    )
                 }
 
                 viewModel.closedNodes.forEach { pt ->

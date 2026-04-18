@@ -3,184 +3,1090 @@ package com.example.tsumaps.core
 object PlaceStorage {
     val places = listOf(
         // --- ФАСТФУД И БУРГЕРНЫЕ ---
-        Place(1, "Rostics", "Ленина, 51А", 56.469127, 84.951110, PlaceType.FOOD, "09:00", "01:00",
-            menu = setOf(FoodItem.FRIED_CHICKEN, FoodItem.BURGERS, FoodItem.POTATO_DISHES, FoodItem.COLD_DRINKS)),
-        Place(3, "Medium, please!", "Ленина, 55", 56.469976, 84.951608, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.BURGERS, FoodItem.MEAT_GRILL, FoodItem.POTATO_DISHES, FoodItem.BEER)),
-        Place(33, "Give Me Two", "проспект Кирова, 5", 56.464312, 84.957106, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.BURGERS, FoodItem.POTATO_DISHES, FoodItem.COLD_DRINKS, FoodItem.BEER)),
-        Place(37, "Большой Ребровски", "проспект Кирова, 5", 56.464421, 84.957222, PlaceType.FOOD,"12:00", "23:00",
-            menu = setOf(FoodItem.BURGERS, FoodItem.MEAT_GRILL, FoodItem.POTATO_DISHES, FoodItem.BEER, FoodItem.COCKTAILS)),
+        Place(
+            1, "Rostics", "Ленина, 51А", 56.469127, 84.951110, PlaceType.FOOD, "09:00", "01:00",
+            menu = setOf(
+                FoodItem.FRIED_CHICKEN,
+                FoodItem.BURGERS,
+                FoodItem.POTATO_DISHES,
+                FoodItem.COLD_DRINKS
+            )
+        ),
+        Place(
+            3,
+            "Medium, please!",
+            "Ленина, 55",
+            56.469976,
+            84.951608,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.BURGERS,
+                FoodItem.MEAT_GRILL,
+                FoodItem.POTATO_DISHES,
+                FoodItem.BEER
+            )
+        ),
+        Place(
+            33,
+            "Give Me Two",
+            "проспект Кирова, 5",
+            56.464312,
+            84.957106,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.BURGERS,
+                FoodItem.POTATO_DISHES,
+                FoodItem.COLD_DRINKS,
+                FoodItem.BEER
+            )
+        ),
+        Place(
+            37,
+            "Большой Ребровски",
+            "проспект Кирова, 5",
+            56.464421,
+            84.957222,
+            PlaceType.FOOD,
+            "12:00",
+            "23:00",
+            menu = setOf(
+                FoodItem.BURGERS,
+                FoodItem.MEAT_GRILL,
+                FoodItem.POTATO_DISHES,
+                FoodItem.BEER,
+                FoodItem.COCKTAILS
+            )
+        ),
 
         // --- ШАУРМА И СТРИТФУД ---
-        Place(9, "Shaur Donars", "Герцена, 6/2", 56.472107, 84.954670, PlaceType.FOOD_SHOP,"10:00", "22:00",
-            menu = setOf(FoodItem.SHAWARMA, FoodItem.HOT_DOGS, FoodItem.COLD_DRINKS, FoodItem.TEA)),
-        Place(39, "Безумно", "проспект Кирова, 5", 56.464442, 84.957419, PlaceType.FOOD, "10:00", "23:00",
-            menu = setOf(FoodItem.SHAWARMA, FoodItem.HOT_DOGS, FoodItem.COLD_DRINKS, FoodItem.TEA)),
-        Place(50, "Безумно", "Московский тракт, 17", 56.471432, 84.940994, PlaceType.FOOD,"10:00", "23:00",
-            menu = setOf(FoodItem.SHAWARMA, FoodItem.HOT_DOGS, FoodItem.COLD_DRINKS, FoodItem.TEA)),
-        Place(59, "Смак Тайм", "Московский тракт, 2с15", 56.470280, 84.945109, PlaceType.FOOD_SHOP,"09:00", "21:00",
-            menu = setOf(FoodItem.SHAWARMA, FoodItem.HOT_DOGS, FoodItem.COLD_DRINKS, FoodItem.TEA)),
+        Place(
+            9,
+            "Shaur Donars",
+            "Герцена, 6/2",
+            56.472107,
+            84.954670,
+            PlaceType.FOOD_SHOP,
+            "10:00",
+            "22:00",
+            menu = setOf(FoodItem.SHAWARMA, FoodItem.HOT_DOGS, FoodItem.COLD_DRINKS, FoodItem.TEA)
+        ),
+        Place(
+            39,
+            "Безумно",
+            "проспект Кирова, 5",
+            56.464442,
+            84.957419,
+            PlaceType.FOOD,
+            "10:00",
+            "23:00",
+            menu = setOf(FoodItem.SHAWARMA, FoodItem.HOT_DOGS, FoodItem.COLD_DRINKS, FoodItem.TEA)
+        ),
+        Place(
+            50,
+            "Безумно",
+            "Московский тракт, 17",
+            56.471432,
+            84.940994,
+            PlaceType.FOOD,
+            "10:00",
+            "23:00",
+            menu = setOf(FoodItem.SHAWARMA, FoodItem.HOT_DOGS, FoodItem.COLD_DRINKS, FoodItem.TEA)
+        ),
+        Place(
+            59,
+            "Смак Тайм",
+            "Московский тракт, 2с15",
+            56.470280,
+            84.945109,
+            PlaceType.FOOD_SHOP,
+            "09:00",
+            "21:00",
+            menu = setOf(FoodItem.SHAWARMA, FoodItem.HOT_DOGS, FoodItem.COLD_DRINKS, FoodItem.TEA)
+        ),
 
         // --- БЛИНЫ И ВАФЛИ ---
-        Place(6, "Сибирские блины", "Ленина, 67", 56.472611, 84.950848, PlaceType.FOOD_SHOP,"09:00", "21:00",
-            menu = setOf(FoodItem.PANCAKES, FoodItem.TEA, FoodItem.COFFEE, FoodItem.COLD_DRINKS)),
-        Place(10, "Сибирские блины", "Советская ул., 47", 56.472638, 84.954925, PlaceType.FOOD_SHOP,"09:00", "21:00",
-            menu = setOf(FoodItem.PANCAKES, FoodItem.TEA, FoodItem.COFFEE, FoodItem.COLD_DRINKS)),
-        Place(62, "Сибирские Блины", "проспект Ленина, 36с1", 56.469373, 84.946552, PlaceType.FOOD,"09:00", "21:00",
-            menu = setOf(FoodItem.PANCAKES, FoodItem.TEA, FoodItem.COFFEE, FoodItem.COLD_DRINKS)),
-        Place(34, "Vaffel", "проспект Кирова, 5", 56.464326, 84.957361, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.WAFFLES, FoodItem.BREAKFASTS, FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.TEA)),
+        Place(
+            6,
+            "Сибирские блины",
+            "Ленина, 67",
+            56.472611,
+            84.950848,
+            PlaceType.FOOD_SHOP,
+            "09:00",
+            "21:00",
+            menu = setOf(FoodItem.PANCAKES, FoodItem.TEA, FoodItem.COFFEE, FoodItem.COLD_DRINKS)
+        ),
+        Place(
+            10,
+            "Сибирские блины",
+            "Советская ул., 47",
+            56.472638,
+            84.954925,
+            PlaceType.FOOD_SHOP,
+            "09:00",
+            "21:00",
+            menu = setOf(FoodItem.PANCAKES, FoodItem.TEA, FoodItem.COFFEE, FoodItem.COLD_DRINKS)
+        ),
+        Place(
+            62,
+            "Сибирские Блины",
+            "проспект Ленина, 36с1",
+            56.469373,
+            84.946552,
+            PlaceType.FOOD,
+            "09:00",
+            "21:00",
+            menu = setOf(FoodItem.PANCAKES, FoodItem.TEA, FoodItem.COFFEE, FoodItem.COLD_DRINKS)
+        ),
+        Place(
+            34,
+            "Vaffel",
+            "проспект Кирова, 5",
+            56.464326,
+            84.957361,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.WAFFLES,
+                FoodItem.BREAKFASTS,
+                FoodItem.COFFEE,
+                FoodItem.DESSERTS,
+                FoodItem.TEA
+            )
+        ),
 
         // --- ПИЦЦЕРИИ ---
-        Place(31, "Make Love Pizza", "проспект Кирова, 5", 56.464270, 84.957242, PlaceType.FOOD,"11:00", "23:00",
-            menu = setOf(FoodItem.PIZZA, FoodItem.SALADS, FoodItem.COLD_DRINKS, FoodItem.BEER)),
-        Place(41, "Три сыра", "проспект Кирова, 5", 56.464548, 84.957429, PlaceType.FOOD,"11:00", "23:00",
-            menu = setOf(FoodItem.PIZZA, FoodItem.SALADS, FoodItem.SOUPS, FoodItem.TEA)),
-        Place(70, "Maya pizza", "проспект Кирова, 5А", 56.466242, 84.955308, PlaceType.FOOD,"08:00", "22:00",
-            menu = setOf(FoodItem.PIZZA, FoodItem.SALADS, FoodItem.COLD_DRINKS, FoodItem.BEER)),
+        Place(
+            31,
+            "Make Love Pizza",
+            "проспект Кирова, 5",
+            56.464270,
+            84.957242,
+            PlaceType.FOOD,
+            "11:00",
+            "23:00",
+            menu = setOf(FoodItem.PIZZA, FoodItem.SALADS, FoodItem.COLD_DRINKS, FoodItem.BEER)
+        ),
+        Place(
+            41,
+            "Три сыра",
+            "проспект Кирова, 5",
+            56.464548,
+            84.957429,
+            PlaceType.FOOD,
+            "11:00",
+            "23:00",
+            menu = setOf(FoodItem.PIZZA, FoodItem.SALADS, FoodItem.SOUPS, FoodItem.TEA)
+        ),
+        Place(
+            70,
+            "Maya pizza",
+            "проспект Кирова, 5А",
+            56.466242,
+            84.955308,
+            PlaceType.FOOD,
+            "08:00",
+            "22:00",
+            menu = setOf(FoodItem.PIZZA, FoodItem.SALADS, FoodItem.COLD_DRINKS, FoodItem.BEER)
+        ),
 
         // --- КОФЕЙНИ И КОНДИТЕРСКИЕ ---
-        Place(2, "Гербарий", "Ленина, 55", 56.470070, 84.951529, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.BREAKFASTS, FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.TEA)),
-        Place(5, "Baba Roma", "Ленина, 63", 56.471166, 84.951124, PlaceType.FOOD, "10:00", "23:00",
-            menu = setOf(FoodItem.BAKERY, FoodItem.DESSERTS, FoodItem.COFFEE, FoodItem.TEA)),
-        Place(12, "Пеки, Лола!", "улица Кузнецова, 1", 56.471521, 84.954948, PlaceType.FOOD, "09:00", "21:00",
-            menu = setOf(FoodItem.BAKERY, FoodItem.DESSERTS, FoodItem.COFFEE, FoodItem.BREAKFASTS)),
-        Place(14, "Укромное местечко", "Советская улица, 59", 56.469344, 84.952989, PlaceType.FOOD,"11:00", "23:00",
-            menu = setOf(FoodItem.BREAKFASTS, FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.SALADS)),
-        Place(16, "Тесто", "Советская улица, 76А", 56.465545, 84.953865, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.BAKERY, FoodItem.PIZZA, FoodItem.COFFEE, FoodItem.DESSERTS)),
-        Place(19, "Пешком постою", "Советская улица, 80", 56.464785, 84.953917, PlaceType.FOOD,"10:00", "21:00",
-            menu = setOf(FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.BAKERY, FoodItem.TEA)),
-        Place(26, "Торта", "проспект Кирова, 5", 56.464167, 84.957074, PlaceType.FOOD_SHOP,"10:00", "21:00",
-            menu = setOf(FoodItem.DESSERTS, FoodItem.BAKERY, FoodItem.COFFEE, FoodItem.TEA)),
-        Place(29, "Surf Coffee x Lamp", "проспект Кирова, 5", 56.464226, 84.957399, PlaceType.FOOD,"09:00", "22:00",
-            menu = setOf(FoodItem.COFFEE, FoodItem.TEA, FoodItem.DESSERTS, FoodItem.BAKERY)),
-        Place(38, "Moments", "проспект Кирова, 5", 56.464421, 84.957419, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.BREAKFASTS, FoodItem.TEA)),
-        Place(42, "Заварка", "проспект Кирова, 5", 56.464531, 84.957237, PlaceType.FOOD,"09:00", "22:00",
-            menu = setOf(FoodItem.COFFEE, FoodItem.TEA, FoodItem.DESSERTS, FoodItem.BAKERY)),
-        Place(45, "Настроение", "проспект Кирова, 5/4", 56.465271, 84.956891, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.BREAKFASTS, FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.TEA)),
-        Place(58, "Укромное местечко", "Московский тракт, 2с20", 56.472457, 84.948566, PlaceType.FOOD,"11:00", "23:00",
-            menu = setOf(FoodItem.BREAKFASTS, FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.SALADS)),
-        Place(60, "Кофе", "Московский тракт, 2с15", 56.470170, 84.945040, PlaceType.FOOD_SHOP,"08:00", "21:00",
-            menu = setOf(FoodItem.COFFEE, FoodItem.TEA, FoodItem.DESSERTS, FoodItem.BAKERY)),
-        Place(61, "Starbooks", "проспект Ленина, 36к9", 56.469602, 84.946137, PlaceType.FOOD,"08:00", "22:00",
-            menu = setOf(FoodItem.COFFEE, FoodItem.TEA, FoodItem.DESSERTS, FoodItem.BAKERY)),
-        Place(63, "Xo bakery", "проспект Ленина, 36к2", 56.468615, 84.945148, PlaceType.FOOD,"08:00", "21:00",
-            menu = setOf(FoodItem.BAKERY, FoodItem.DESSERTS, FoodItem.COFFEE, FoodItem.TEA)),
-        Place(69, "Буланже", "проспект Кирова, 5А", 56.466243, 84.955513, PlaceType.FOOD,"08:00", "22:00",
-            menu = setOf(FoodItem.BAKERY, FoodItem.DESSERTS, FoodItem.COFFEE, FoodItem.BREAKFASTS)),
+        Place(
+            2, "Гербарий", "Ленина, 55", 56.470070, 84.951529, PlaceType.FOOD, "10:00", "22:00",
+            menu = setOf(FoodItem.BREAKFASTS, FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.TEA)
+        ),
+        Place(
+            5, "Baba Roma", "Ленина, 63", 56.471166, 84.951124, PlaceType.FOOD, "10:00", "23:00",
+            menu = setOf(FoodItem.BAKERY, FoodItem.DESSERTS, FoodItem.COFFEE, FoodItem.TEA)
+        ),
+        Place(
+            12,
+            "Пеки, Лола!",
+            "улица Кузнецова, 1",
+            56.471521,
+            84.954948,
+            PlaceType.FOOD,
+            "09:00",
+            "21:00",
+            menu = setOf(FoodItem.BAKERY, FoodItem.DESSERTS, FoodItem.COFFEE, FoodItem.BREAKFASTS)
+        ),
+        Place(
+            14,
+            "Укромное местечко",
+            "Советская улица, 59",
+            56.469344,
+            84.952989,
+            PlaceType.FOOD,
+            "11:00",
+            "23:00",
+            menu = setOf(FoodItem.BREAKFASTS, FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.SALADS)
+        ),
+        Place(
+            16,
+            "Тесто",
+            "Советская улица, 76А",
+            56.465545,
+            84.953865,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(FoodItem.BAKERY, FoodItem.PIZZA, FoodItem.COFFEE, FoodItem.DESSERTS)
+        ),
+        Place(
+            19,
+            "Пешком постою",
+            "Советская улица, 80",
+            56.464785,
+            84.953917,
+            PlaceType.FOOD,
+            "10:00",
+            "21:00",
+            menu = setOf(FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.BAKERY, FoodItem.TEA)
+        ),
+        Place(
+            26,
+            "Торта",
+            "проспект Кирова, 5",
+            56.464167,
+            84.957074,
+            PlaceType.FOOD_SHOP,
+            "10:00",
+            "21:00",
+            menu = setOf(FoodItem.DESSERTS, FoodItem.BAKERY, FoodItem.COFFEE, FoodItem.TEA)
+        ),
+        Place(
+            29,
+            "Surf Coffee x Lamp",
+            "проспект Кирова, 5",
+            56.464226,
+            84.957399,
+            PlaceType.FOOD,
+            "09:00",
+            "22:00",
+            menu = setOf(FoodItem.COFFEE, FoodItem.TEA, FoodItem.DESSERTS, FoodItem.BAKERY)
+        ),
+        Place(
+            38,
+            "Moments",
+            "проспект Кирова, 5",
+            56.464421,
+            84.957419,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.BREAKFASTS, FoodItem.TEA)
+        ),
+        Place(
+            42,
+            "Заварка",
+            "проспект Кирова, 5",
+            56.464531,
+            84.957237,
+            PlaceType.FOOD,
+            "09:00",
+            "22:00",
+            menu = setOf(FoodItem.COFFEE, FoodItem.TEA, FoodItem.DESSERTS, FoodItem.BAKERY)
+        ),
+        Place(
+            45,
+            "Настроение",
+            "проспект Кирова, 5/4",
+            56.465271,
+            84.956891,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(FoodItem.BREAKFASTS, FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.TEA)
+        ),
+        Place(
+            58,
+            "Укромное местечко",
+            "Московский тракт, 2с20",
+            56.472457,
+            84.948566,
+            PlaceType.FOOD,
+            "11:00",
+            "23:00",
+            menu = setOf(FoodItem.BREAKFASTS, FoodItem.COFFEE, FoodItem.DESSERTS, FoodItem.SALADS)
+        ),
+        Place(
+            60,
+            "Кофе",
+            "Московский тракт, 2с15",
+            56.470170,
+            84.945040,
+            PlaceType.FOOD_SHOP,
+            "08:00",
+            "21:00",
+            menu = setOf(FoodItem.COFFEE, FoodItem.TEA, FoodItem.DESSERTS, FoodItem.BAKERY)
+        ),
+        Place(
+            61,
+            "Starbooks",
+            "проспект Ленина, 36к9",
+            56.469602,
+            84.946137,
+            PlaceType.FOOD,
+            "08:00",
+            "22:00",
+            menu = setOf(FoodItem.COFFEE, FoodItem.TEA, FoodItem.DESSERTS, FoodItem.BAKERY)
+        ),
+        Place(
+            63,
+            "Xo bakery",
+            "проспект Ленина, 36к2",
+            56.468615,
+            84.945148,
+            PlaceType.FOOD,
+            "08:00",
+            "21:00",
+            menu = setOf(FoodItem.BAKERY, FoodItem.DESSERTS, FoodItem.COFFEE, FoodItem.TEA)
+        ),
+        Place(
+            69,
+            "Буланже",
+            "проспект Кирова, 5А",
+            56.466243,
+            84.955513,
+            PlaceType.FOOD,
+            "08:00",
+            "22:00",
+            menu = setOf(FoodItem.BAKERY, FoodItem.DESSERTS, FoodItem.COFFEE, FoodItem.BREAKFASTS)
+        ),
 
         // --- МОРОЖЕНОЕ ---
-        Place(4, "33 Пингвина", "Ленина, 63/1", 56.471062, 84.950785, PlaceType.FOOD_SHOP,"10:00", "22:00",
-            menu = setOf(FoodItem.ICE_CREAM, FoodItem.COFFEE, FoodItem.DESSERTS)),
-        Place(11, "33 Пингвина","ул. Герцена, 6", 56.472710, 84.955471, PlaceType.FOOD_SHOP,"10:00", "22:00",
-            menu = setOf(FoodItem.ICE_CREAM, FoodItem.COFFEE, FoodItem.DESSERTS)),
-        Place(46, "Эскимос", "проспект Ленина", 56.464018, 84.950608, PlaceType.FOOD_SHOP,"10:00", "22:00",
-            menu = setOf(FoodItem.ICE_CREAM, FoodItem.COLD_DRINKS, FoodItem.DESSERTS)),
+        Place(
+            4,
+            "33 Пингвина",
+            "Ленина, 63/1",
+            56.471062,
+            84.950785,
+            PlaceType.FOOD_SHOP,
+            "10:00",
+            "22:00",
+            menu = setOf(FoodItem.ICE_CREAM, FoodItem.COFFEE, FoodItem.DESSERTS)
+        ),
+        Place(
+            11,
+            "33 Пингвина",
+            "ул. Герцена, 6",
+            56.472710,
+            84.955471,
+            PlaceType.FOOD_SHOP,
+            "10:00",
+            "22:00",
+            menu = setOf(FoodItem.ICE_CREAM, FoodItem.COFFEE, FoodItem.DESSERTS)
+        ),
+        Place(
+            46,
+            "Эскимос",
+            "проспект Ленина",
+            56.464018,
+            84.950608,
+            PlaceType.FOOD_SHOP,
+            "10:00",
+            "22:00",
+            menu = setOf(FoodItem.ICE_CREAM, FoodItem.COLD_DRINKS, FoodItem.DESSERTS)
+        ),
 
         // --- АЗИАТСКАЯ КУХНЯ ---
-        Place(20, "Panda jui", "Советская улица, 80", 56.464717, 84.953911, PlaceType.FOOD,"10:00", "21:00",
-            menu = setOf(FoodItem.WOK_NOODLES, FoodItem.SUSHI_ROLLS, FoodItem.ASIAN_SOUPS, FoodItem.TEA)),
-        Place(22, "Yoki Toki", "проспект Кирова, 5", 56.464233, 84.956068, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.SUSHI_ROLLS, FoodItem.WOK_NOODLES, FoodItem.ASIAN_SOUPS, FoodItem.TEA)),
-        Place(28, "Nam Pho", "проспект Кирова, 5", 56.464227, 84.957099, PlaceType.FOOD,"11:00", "22:00",
-            menu = setOf(FoodItem.ASIAN_SOUPS, FoodItem.WOK_NOODLES, FoodItem.TEA, FoodItem.COLD_DRINKS)),
-        Place(32, "Бууза", "проспект Кирова, 5", 56.464269, 84.957097, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.DUMPLINGS, FoodItem.ASIAN_SOUPS, FoodItem.HOT_MEALS, FoodItem.TEA)),
+        Place(
+            20,
+            "Panda jui",
+            "Советская улица, 80",
+            56.464717,
+            84.953911,
+            PlaceType.FOOD,
+            "10:00",
+            "21:00",
+            menu = setOf(
+                FoodItem.WOK_NOODLES,
+                FoodItem.SUSHI_ROLLS,
+                FoodItem.ASIAN_SOUPS,
+                FoodItem.TEA
+            )
+        ),
+        Place(
+            22,
+            "Yoki Toki",
+            "проспект Кирова, 5",
+            56.464233,
+            84.956068,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.SUSHI_ROLLS,
+                FoodItem.WOK_NOODLES,
+                FoodItem.ASIAN_SOUPS,
+                FoodItem.TEA
+            )
+        ),
+        Place(
+            28,
+            "Nam Pho",
+            "проспект Кирова, 5",
+            56.464227,
+            84.957099,
+            PlaceType.FOOD,
+            "11:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.ASIAN_SOUPS,
+                FoodItem.WOK_NOODLES,
+                FoodItem.TEA,
+                FoodItem.COLD_DRINKS
+            )
+        ),
+        Place(
+            32,
+            "Бууза",
+            "проспект Кирова, 5",
+            56.464269,
+            84.957097,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(FoodItem.DUMPLINGS, FoodItem.ASIAN_SOUPS, FoodItem.HOT_MEALS, FoodItem.TEA)
+        ),
 
         // --- СТОЛОВЫЕ И ДОМАШНЯЯ ЕДА ---
-        Place(17, "Poly bistro", "Советская улица, 78", 56.465089, 84.953898, PlaceType.FOOD, "10:00", "22:00",
-            menu = setOf(FoodItem.BUSINESS_LUNCH, FoodItem.HOT_MEALS, FoodItem.SOUPS, FoodItem.SALADS, FoodItem.COFFEE)),
-        Place(18, "Кудесы", "Советская улица, 80", 56.464860, 84.953917, PlaceType.FOOD,"10:00", "21:00",
-            menu = setOf(FoodItem.HOT_MEALS, FoodItem.SOUPS, FoodItem.BAKERY, FoodItem.TEA)),
-        Place(23, "Колобок", "проспект Кирова, 5", 56.464226, 84.956430, PlaceType.FOOD,"10:00", "21:00",
-            menu = setOf(FoodItem.BAKERY, FoodItem.HOT_MEALS, FoodItem.TEA, FoodItem.SOUPS)),
-        Place(30, "Тот самый драник", "проспект Кирова, 5", 56.464271, 84.957409, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.POTATO_DISHES, FoodItem.HOT_MEALS, FoodItem.SOUPS, FoodItem.TEA)),
-        Place(47, "Столовая в Главном", "проспект Ленина, 30", 56.465009, 84.949486, PlaceType.FOOD,"08:00", "17:00",
-            menu = setOf(FoodItem.SOUPS, FoodItem.SALADS, FoodItem.HOT_MEALS, FoodItem.BAKERY, FoodItem.BUSINESS_LUNCH)),
-        Place(51, "У мамы", "Московский тракт, 6/3", 56.473547, 84.943561, PlaceType.FOOD,"09:00", "21:00",
-            menu = setOf(FoodItem.HOT_MEALS, FoodItem.SOUPS, FoodItem.SALADS, FoodItem.TEA, FoodItem.BAKERY)),
-        Place(57, "Столовая", "проспект Ленина, 40", 56.473537, 84.949681, PlaceType.FOOD, "08:00", "17:00",
-            menu = setOf(FoodItem.SOUPS, FoodItem.SALADS, FoodItem.HOT_MEALS, FoodItem.BAKERY, FoodItem.BUSINESS_LUNCH)),
-        Place(65, "100ловая", "проспект Ленина, 36с1", 56.469536, 84.946817, PlaceType.FOOD,"09:00", "21:00",
-            menu = setOf(FoodItem.SOUPS, FoodItem.SALADS, FoodItem.HOT_MEALS, FoodItem.BAKERY, FoodItem.BUSINESS_LUNCH)),
-        Place(66, "Минутка", "проспект Ленина, 36с1", 56.469412, 84.946862, PlaceType.FOOD,"09:00", "21:00",
-            menu = setOf(FoodItem.HOT_MEALS, FoodItem.SOUPS, FoodItem.SALADS, FoodItem.TEA)),
+        Place(
+            17,
+            "Poly bistro",
+            "Советская улица, 78",
+            56.465089,
+            84.953898,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.BUSINESS_LUNCH,
+                FoodItem.HOT_MEALS,
+                FoodItem.SOUPS,
+                FoodItem.SALADS,
+                FoodItem.COFFEE
+            )
+        ),
+        Place(
+            18,
+            "Кудесы",
+            "Советская улица, 80",
+            56.464860,
+            84.953917,
+            PlaceType.FOOD,
+            "10:00",
+            "21:00",
+            menu = setOf(FoodItem.HOT_MEALS, FoodItem.SOUPS, FoodItem.BAKERY, FoodItem.TEA)
+        ),
+        Place(
+            23,
+            "Колобок",
+            "проспект Кирова, 5",
+            56.464226,
+            84.956430,
+            PlaceType.FOOD,
+            "10:00",
+            "21:00",
+            menu = setOf(FoodItem.BAKERY, FoodItem.HOT_MEALS, FoodItem.TEA, FoodItem.SOUPS)
+        ),
+        Place(
+            30,
+            "Тот самый драник",
+            "проспект Кирова, 5",
+            56.464271,
+            84.957409,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(FoodItem.POTATO_DISHES, FoodItem.HOT_MEALS, FoodItem.SOUPS, FoodItem.TEA)
+        ),
+        Place(
+            47,
+            "Столовая в Главном",
+            "проспект Ленина, 30",
+            56.465009,
+            84.949486,
+            PlaceType.FOOD,
+            "08:00",
+            "17:00",
+            menu = setOf(
+                FoodItem.SOUPS,
+                FoodItem.SALADS,
+                FoodItem.HOT_MEALS,
+                FoodItem.BAKERY,
+                FoodItem.BUSINESS_LUNCH
+            )
+        ),
+        Place(
+            51,
+            "У мамы",
+            "Московский тракт, 6/3",
+            56.473547,
+            84.943561,
+            PlaceType.FOOD,
+            "09:00",
+            "21:00",
+            menu = setOf(
+                FoodItem.HOT_MEALS,
+                FoodItem.SOUPS,
+                FoodItem.SALADS,
+                FoodItem.TEA,
+                FoodItem.BAKERY
+            )
+        ),
+        Place(
+            57,
+            "Столовая",
+            "проспект Ленина, 40",
+            56.473537,
+            84.949681,
+            PlaceType.FOOD,
+            "08:00",
+            "17:00",
+            menu = setOf(
+                FoodItem.SOUPS,
+                FoodItem.SALADS,
+                FoodItem.HOT_MEALS,
+                FoodItem.BAKERY,
+                FoodItem.BUSINESS_LUNCH
+            )
+        ),
+        Place(
+            65,
+            "100ловая",
+            "проспект Ленина, 36с1",
+            56.469536,
+            84.946817,
+            PlaceType.FOOD,
+            "09:00",
+            "21:00",
+            menu = setOf(
+                FoodItem.SOUPS,
+                FoodItem.SALADS,
+                FoodItem.HOT_MEALS,
+                FoodItem.BAKERY,
+                FoodItem.BUSINESS_LUNCH
+            )
+        ),
+        Place(
+            66,
+            "Минутка",
+            "проспект Ленина, 36с1",
+            56.469412,
+            84.946862,
+            PlaceType.FOOD,
+            "09:00",
+            "21:00",
+            menu = setOf(FoodItem.HOT_MEALS, FoodItem.SOUPS, FoodItem.SALADS, FoodItem.TEA)
+        ),
 
         // --- РЕСТОРАНЫ / МЯСО / МОРЕПРОДУКТЫ ---
-        Place(7, "Вечный зов", "Советская ул., 47", 56.471207, 84.952977, PlaceType.FOOD, "11:00", "23:00",
-            menu = setOf(FoodItem.MEAT_GRILL, FoodItem.HOT_MEALS, FoodItem.SALADS, FoodItem.WINE, FoodItem.SOUPS)),
-        Place(21, "Ребро", "Советская улица, 80", 56.464718, 84.953986, PlaceType.FOOD,"12:00", "23:00",
-            menu = setOf(FoodItem.MEAT_GRILL, FoodItem.BURGERS, FoodItem.BEER, FoodItem.POTATO_DISHES)),
-        Place(40, "Мидийная", "проспект Кирова, 5", 56.464517, 84.957423, PlaceType.FOOD,"12:00", "23:00",
-            menu = setOf(FoodItem.SEAFOOD, FoodItem.WINE, FoodItem.SALADS, FoodItem.HOT_MEALS)),
-        Place(44, "Антрекот", "проспект Кирова, 5", 56.464572, 84.957181, PlaceType.FOOD,"11:00", "23:00",
-            menu = setOf(FoodItem.MEAT_GRILL, FoodItem.HOT_MEALS, FoodItem.SALADS, FoodItem.WINE, FoodItem.BEER)),
+        Place(
+            7,
+            "Вечный зов",
+            "Советская ул., 47",
+            56.471207,
+            84.952977,
+            PlaceType.FOOD,
+            "11:00",
+            "23:00",
+            menu = setOf(
+                FoodItem.MEAT_GRILL,
+                FoodItem.HOT_MEALS,
+                FoodItem.SALADS,
+                FoodItem.WINE,
+                FoodItem.SOUPS
+            )
+        ),
+        Place(
+            21,
+            "Ребро",
+            "Советская улица, 80",
+            56.464718,
+            84.953986,
+            PlaceType.FOOD,
+            "12:00",
+            "23:00",
+            menu = setOf(
+                FoodItem.MEAT_GRILL,
+                FoodItem.BURGERS,
+                FoodItem.BEER,
+                FoodItem.POTATO_DISHES
+            )
+        ),
+        Place(
+            40,
+            "Мидийная",
+            "проспект Кирова, 5",
+            56.464517,
+            84.957423,
+            PlaceType.FOOD,
+            "12:00",
+            "23:00",
+            menu = setOf(FoodItem.SEAFOOD, FoodItem.WINE, FoodItem.SALADS, FoodItem.HOT_MEALS)
+        ),
+        Place(
+            44,
+            "Антрекот",
+            "проспект Кирова, 5",
+            56.464572,
+            84.957181,
+            PlaceType.FOOD,
+            "11:00",
+            "23:00",
+            menu = setOf(
+                FoodItem.MEAT_GRILL,
+                FoodItem.HOT_MEALS,
+                FoodItem.SALADS,
+                FoodItem.WINE,
+                FoodItem.BEER
+            )
+        ),
 
         // --- БАРЫ И АЛКОГОЛЬНЫЕ МАГАЗИНЫ ---
-        Place(15, "Бристоль", "Советская улица, 63", 56.468553, 84.953179, PlaceType.FOOD_SHOP,"09:00", "22:00",
-            menu = setOf(FoodItem.BEER, FoodItem.STRONG_ALCOHOL, FoodItem.WINE, FoodItem.GROCERIES, FoodItem.BAR_SNACKS)),
-        Place(25, "За Пивком", "проспект Кирова, 5", 56.464179, 84.956923, PlaceType.FOOD_SHOP,"10:00", "23:00",
-            menu = setOf(FoodItem.BEER, FoodItem.BAR_SNACKS, FoodItem.COLD_DRINKS)),
-        Place(27, "Шейк", "проспект Кирова, 5", 56.464153, 84.957418, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.COCKTAILS, FoodItem.BEER, FoodItem.BAR_SNACKS, FoodItem.BURGERS)),
-        Place(35, "Beer Point", "проспект Кирова, 5", 56.464382, 84.957106, PlaceType.FOOD,"12:00", "00:00",
-            menu = setOf(FoodItem.BEER, FoodItem.BAR_SNACKS, FoodItem.BURGERS, FoodItem.COLD_DRINKS)),
-        Place(43, "Chupito", "проспект Кирова, 5", 56.464541, 84.957182, PlaceType.FOOD,"12:00", "00:00",
-            menu = setOf(FoodItem.COCKTAILS, FoodItem.STRONG_ALCOHOL, FoodItem.BAR_SNACKS, FoodItem.BEER)),
-        Place(52, "Красное белое", "Московский тракт, 6/3", 56.473666, 84.943579, PlaceType.FOOD_SHOP,"09:00", "23:00",
-            menu = setOf(FoodItem.BEER, FoodItem.STRONG_ALCOHOL, FoodItem.WINE, FoodItem.GROCERIES, FoodItem.BAR_SNACKS)),
-        Place(54, "Рюмки на стол", "Московский тракт, 6/4", 56.473236, 84.944589, PlaceType.FOOD,"12:00", "00:00",
-            menu = setOf(FoodItem.STRONG_ALCOHOL, FoodItem.COCKTAILS, FoodItem.BAR_SNACKS, FoodItem.BEER)),
-        Place(56, "Harats pub", "Источная улица, 42", 56.473415, 84.945693, PlaceType.FOOD,"12:00", "02:00",
-            menu = setOf(FoodItem.BEER, FoodItem.COCKTAILS, FoodItem.BAR_SNACKS, FoodItem.BURGERS, FoodItem.STRONG_ALCOHOL)),
+        Place(
+            15,
+            "Бристоль",
+            "Советская улица, 63",
+            56.468553,
+            84.953179,
+            PlaceType.FOOD_SHOP,
+            "09:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.BEER,
+                FoodItem.STRONG_ALCOHOL,
+                FoodItem.WINE,
+                FoodItem.GROCERIES,
+                FoodItem.BAR_SNACKS
+            )
+        ),
+        Place(
+            25,
+            "За Пивком",
+            "проспект Кирова, 5",
+            56.464179,
+            84.956923,
+            PlaceType.FOOD_SHOP,
+            "10:00",
+            "23:00",
+            menu = setOf(FoodItem.BEER, FoodItem.BAR_SNACKS, FoodItem.COLD_DRINKS)
+        ),
+        Place(
+            27,
+            "Шейк",
+            "проспект Кирова, 5",
+            56.464153,
+            84.957418,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(FoodItem.COCKTAILS, FoodItem.BEER, FoodItem.BAR_SNACKS, FoodItem.BURGERS)
+        ),
+        Place(
+            35,
+            "Beer Point",
+            "проспект Кирова, 5",
+            56.464382,
+            84.957106,
+            PlaceType.FOOD,
+            "12:00",
+            "00:00",
+            menu = setOf(FoodItem.BEER, FoodItem.BAR_SNACKS, FoodItem.BURGERS, FoodItem.COLD_DRINKS)
+        ),
+        Place(
+            43,
+            "Chupito",
+            "проспект Кирова, 5",
+            56.464541,
+            84.957182,
+            PlaceType.FOOD,
+            "12:00",
+            "00:00",
+            menu = setOf(
+                FoodItem.COCKTAILS,
+                FoodItem.STRONG_ALCOHOL,
+                FoodItem.BAR_SNACKS,
+                FoodItem.BEER
+            )
+        ),
+        Place(
+            52,
+            "Красное белое",
+            "Московский тракт, 6/3",
+            56.473666,
+            84.943579,
+            PlaceType.FOOD_SHOP,
+            "09:00",
+            "23:00",
+            menu = setOf(
+                FoodItem.BEER,
+                FoodItem.STRONG_ALCOHOL,
+                FoodItem.WINE,
+                FoodItem.GROCERIES,
+                FoodItem.BAR_SNACKS
+            )
+        ),
+        Place(
+            54,
+            "Рюмки на стол",
+            "Московский тракт, 6/4",
+            56.473236,
+            84.944589,
+            PlaceType.FOOD,
+            "12:00",
+            "00:00",
+            menu = setOf(
+                FoodItem.STRONG_ALCOHOL,
+                FoodItem.COCKTAILS,
+                FoodItem.BAR_SNACKS,
+                FoodItem.BEER
+            )
+        ),
+        Place(
+            56,
+            "Harats pub",
+            "Источная улица, 42",
+            56.473415,
+            84.945693,
+            PlaceType.FOOD,
+            "12:00",
+            "02:00",
+            menu = setOf(
+                FoodItem.BEER,
+                FoodItem.COCKTAILS,
+                FoodItem.BAR_SNACKS,
+                FoodItem.BURGERS,
+                FoodItem.STRONG_ALCOHOL
+            )
+        ),
 
         // --- МАГАЗИНЫ И ПРОДУКТЫ ---
-        Place(8, "Ярче!", "Советская ул., 46", 56.471524, 84.953608, PlaceType.FOOD_SHOP,"08:00", "22:00",
-            menu = setOf(FoodItem.GROCERIES, FoodItem.READY_TO_EAT, FoodItem.BAKERY, FoodItem.COLD_DRINKS)),
-        Place(13, "Наш", "Советская улица, 50", 56.469454, 84.953695, PlaceType.FOOD_SHOP,"08:00", "22:00",
-            menu = setOf(FoodItem.GROCERIES, FoodItem.READY_TO_EAT, FoodItem.COLD_DRINKS)),
-        Place(24, "Ассорти", "проспект Кирова, 5",  56.464224, 84.956643, PlaceType.FOOD,"10:00", "21:00",
-            menu = setOf(FoodItem.GROCERIES, FoodItem.READY_TO_EAT, FoodItem.BAKERY)),
-        Place(48, "Мини-микс", "Ленина, 30/2", 56.464443, 84.949191, PlaceType.FOOD,"09:00", "20:00",
-            menu = setOf(FoodItem.GROCERIES, FoodItem.BAKERY, FoodItem.COLD_DRINKS)),
-        Place(49, "Абрикос", "Московский тракт, 17", 56.471379, 84.941219, PlaceType.FOOD_SHOP,"08:00", "22:00",
-            menu = setOf(FoodItem.GROCERIES, FoodItem.READY_TO_EAT, FoodItem.BAKERY, FoodItem.COLD_DRINKS)),
-        Place(53, "Магнолия", "Московский тракт, 6/4", 56.473313, 84.944580, PlaceType.FOOD,"10:00", "22:00",
-            menu = setOf(FoodItem.GROCERIES, FoodItem.READY_TO_EAT, FoodItem.BAKERY, FoodItem.COLD_DRINKS)),
-        Place(55, "Ярче!", "Базарный переулок, 12", 56.473579, 84.944590, PlaceType.FOOD_SHOP,"08:00", "22:00",
-            menu = setOf(FoodItem.GROCERIES, FoodItem.READY_TO_EAT, FoodItem.BAKERY, FoodItem.COLD_DRINKS)),
-        Place(64, "Автоматы", "проспект Ленина, 36к2", 56.468679, 84.945187, PlaceType.FOOD_SHOP,"00:00", "23:59",
-            menu = setOf(FoodItem.COLD_DRINKS, FoodItem.COFFEE, FoodItem.BAR_SNACKS)),
-        Place(67, "Продукты", "улица Белинского, 29", 56.468716, 84.957550, PlaceType.FOOD_SHOP,"08:00", "22:00",
-            menu = setOf(FoodItem.GROCERIES, FoodItem.COLD_DRINKS, FoodItem.BAKERY)),
-        Place(68, "Ярче!", "проспект Кирова, 3Г", 56.466240, 84.954853, PlaceType.FOOD_SHOP,"08:00", "22:00",
-            menu = setOf(FoodItem.GROCERIES, FoodItem.READY_TO_EAT, FoodItem.BAKERY, FoodItem.COLD_DRINKS)),
+        Place(
+            8,
+            "Ярче!",
+            "Советская ул., 46",
+            56.471524,
+            84.953608,
+            PlaceType.FOOD_SHOP,
+            "08:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.GROCERIES,
+                FoodItem.READY_TO_EAT,
+                FoodItem.BAKERY,
+                FoodItem.COLD_DRINKS
+            )
+        ),
+        Place(
+            13,
+            "Наш",
+            "Советская улица, 50",
+            56.469454,
+            84.953695,
+            PlaceType.FOOD_SHOP,
+            "08:00",
+            "22:00",
+            menu = setOf(FoodItem.GROCERIES, FoodItem.READY_TO_EAT, FoodItem.COLD_DRINKS)
+        ),
+        Place(
+            24,
+            "Ассорти",
+            "проспект Кирова, 5",
+            56.464224,
+            84.956643,
+            PlaceType.FOOD,
+            "10:00",
+            "21:00",
+            menu = setOf(FoodItem.GROCERIES, FoodItem.READY_TO_EAT, FoodItem.BAKERY)
+        ),
+        Place(
+            48, "Мини-микс", "Ленина, 30/2", 56.464443, 84.949191, PlaceType.FOOD, "09:00", "20:00",
+            menu = setOf(FoodItem.GROCERIES, FoodItem.BAKERY, FoodItem.COLD_DRINKS)
+        ),
+        Place(
+            49,
+            "Абрикос",
+            "Московский тракт, 17",
+            56.471379,
+            84.941219,
+            PlaceType.FOOD_SHOP,
+            "08:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.GROCERIES,
+                FoodItem.READY_TO_EAT,
+                FoodItem.BAKERY,
+                FoodItem.COLD_DRINKS
+            )
+        ),
+        Place(
+            53,
+            "Магнолия",
+            "Московский тракт, 6/4",
+            56.473313,
+            84.944580,
+            PlaceType.FOOD,
+            "10:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.GROCERIES,
+                FoodItem.READY_TO_EAT,
+                FoodItem.BAKERY,
+                FoodItem.COLD_DRINKS
+            )
+        ),
+        Place(
+            55,
+            "Ярче!",
+            "Базарный переулок, 12",
+            56.473579,
+            84.944590,
+            PlaceType.FOOD_SHOP,
+            "08:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.GROCERIES,
+                FoodItem.READY_TO_EAT,
+                FoodItem.BAKERY,
+                FoodItem.COLD_DRINKS
+            )
+        ),
+        Place(
+            64,
+            "Автоматы",
+            "проспект Ленина, 36к2",
+            56.468679,
+            84.945187,
+            PlaceType.FOOD_SHOP,
+            "00:00",
+            "23:59",
+            menu = setOf(FoodItem.COLD_DRINKS, FoodItem.COFFEE, FoodItem.BAR_SNACKS)
+        ),
+        Place(
+            67,
+            "Продукты",
+            "улица Белинского, 29",
+            56.468716,
+            84.957550,
+            PlaceType.FOOD_SHOP,
+            "08:00",
+            "22:00",
+            menu = setOf(FoodItem.GROCERIES, FoodItem.COLD_DRINKS, FoodItem.BAKERY)
+        ),
+        Place(
+            68,
+            "Ярче!",
+            "проспект Кирова, 3Г",
+            56.466240,
+            84.954853,
+            PlaceType.FOOD_SHOP,
+            "08:00",
+            "22:00",
+            menu = setOf(
+                FoodItem.GROCERIES,
+                FoodItem.READY_TO_EAT,
+                FoodItem.BAKERY,
+                FoodItem.COLD_DRINKS
+            )
+        ),
 
         // ---ДОСТОПРИМЕЧАТЕЛЬНОСТИ ---
-        Place(71, "Университетская Роща", "Томск, Университетская роща", 56.469758219197345, 84.94893434560394, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(72, "Мост через реку Медичку", "Московский тракт, 2, стр. 23, Томск", 56.471216, 84.948979, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(73, "Каменные бабы", "Томск, Университетская роща", 56.469133341656715, 84.94836676775573, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(74, "Памятник Флоринскому и Менделееву", "Томск, Университетская роща", 56.46923558144582, 84.9487508449349, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(75, "Памятник Г.Н. Потанину", "Томск, Университетская роща", 56.468822591801, 84.94973303250951, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(76, "Камень — геофизический центр Азии", "Томск, Университетская роща", 56.46931363486391, 84.94984570624757, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(77, "Главный корпус ТГУ", "пр. Ленина, 36, Томск", 56.469495396469895, 84.948090391001, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(78, "Памятник павшим за Родину", "Томск, Университетская роща", 56.46869469776115, 84.94930878003805, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(79, "Озеро ТГУ", "Томск, Университетская роща", 56.469297294130385, 84.94280281527605, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(80, "Сибирский Ботанический Сад", "пр. Ленина, 34/1, Томск", 56.46668527526113, 84.94644762575109, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(81, "Профессор Белкин (белка)", "Томск, Университетская роща", 56.469837, 84.948352, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(82, "Шахматы и Библиотека ТГУ", "пр. Ленина, 34а, Томск", 56.46786948295595, 84.94968237485303, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(83, "Памятник Младенец в капусте", "Кировский район, Томск", 56.471493, 84.950804, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(84, "Скульптура Венера глазами микрохирурга", "Кировский район, Томск", 56.472532, 84.946641, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(85, "Родник Ботанический ", "Кировский район, Томск", 56.467135, 84.944094, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(86, "Декоративный объект Часы ", "Кировский район, Томск", 56.4671, 84.945974, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(87, "Памятник профессору П.Н. Крылову и профессору Л.П. Сергиевской", "Кировский район, Томск", 56.466641, 84.947157, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(88, "Родник Университетский", "Кировский район, Томск", 56.465615, 84.944419, PlaceType.LANDMARK, "00:00", "23:59"),
-        Place(89, "Значимые деревья", "Кировский район, Томск", 56.469341, 84.949534, PlaceType.LANDMARK, "00:00", "23:59"),
+        Place(
+            71,
+            "Университетская Роща",
+            "Томск, Университетская роща",
+            56.469758219197345,
+            84.94893434560394,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            72,
+            "Мост через реку Медичку",
+            "Московский тракт, 2, стр. 23, Томск",
+            56.471216,
+            84.948979,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            73,
+            "Каменные бабы",
+            "Томск, Университетская роща",
+            56.469133341656715,
+            84.94836676775573,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            74,
+            "Памятник Флоринскому и Менделееву",
+            "Томск, Университетская роща",
+            56.46923558144582,
+            84.9487508449349,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            75,
+            "Памятник Г.Н. Потанину",
+            "Томск, Университетская роща",
+            56.468822591801,
+            84.94973303250951,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            76,
+            "Камень — геофизический центр Азии",
+            "Томск, Университетская роща",
+            56.46931363486391,
+            84.94984570624757,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            77,
+            "Главный корпус ТГУ",
+            "пр. Ленина, 36, Томск",
+            56.469495396469895,
+            84.948090391001,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            78,
+            "Памятник павшим за Родину",
+            "Томск, Университетская роща",
+            56.46869469776115,
+            84.94930878003805,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            79,
+            "Озеро ТГУ",
+            "Томск, Университетская роща",
+            56.469297294130385,
+            84.94280281527605,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            80,
+            "Сибирский Ботанический Сад",
+            "пр. Ленина, 34/1, Томск",
+            56.46668527526113,
+            84.94644762575109,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            81,
+            "Профессор Белкин (белка)",
+            "Томск, Университетская роща",
+            56.469837,
+            84.948352,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            82,
+            "Шахматы и Библиотека ТГУ",
+            "пр. Ленина, 34а, Томск",
+            56.46786948295595,
+            84.94968237485303,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            83,
+            "Памятник Младенец в капусте",
+            "Кировский район, Томск",
+            56.471493,
+            84.950804,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            84,
+            "Скульптура Венера глазами микрохирурга",
+            "Кировский район, Томск",
+            56.472532,
+            84.946641,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            85,
+            "Родник Ботанический ",
+            "Кировский район, Томск",
+            56.467135,
+            84.944094,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            86,
+            "Декоративный объект Часы ",
+            "Кировский район, Томск",
+            56.4671,
+            84.945974,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            87,
+            "Памятник профессору П.Н. Крылову и профессору Л.П. Сергиевской",
+            "Кировский район, Томск",
+            56.466641,
+            84.947157,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            88,
+            "Родник Университетский",
+            "Кировский район, Томск",
+            56.465615,
+            84.944419,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
+        Place(
+            89,
+            "Значимые деревья",
+            "Кировский район, Томск",
+            56.469341,
+            84.949534,
+            PlaceType.LANDMARK,
+            "00:00",
+            "23:59"
+        ),
     )
 }
