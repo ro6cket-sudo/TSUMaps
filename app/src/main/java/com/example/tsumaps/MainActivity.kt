@@ -25,7 +25,11 @@ import androidx.compose.ui.Modifier
 import com.example.tsumaps.ui.screens.MainScreen
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import com.example.tsumaps.core.MapConstants
@@ -42,7 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tsumaps.ui.viewmodels.MapViewModel
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.unit.dp
 import kotlin.math.sqrt
@@ -108,7 +111,6 @@ fun TsuMapScreen(
                                         val panChange = event.calculatePan()
                                         val oldScale = scale
                                         val newScale = (oldScale * zoomChange).coerceIn(0.5f, 10f)
-
                                         offset = Offset(
                                             x = centroid.x - (centroid.x - offset.x) / oldScale * newScale + panChange.x,
                                             y = centroid.y - (centroid.y - offset.y) / oldScale * newScale + panChange.y
@@ -147,8 +149,7 @@ fun TsuMapScreen(
                                         if (!isTap && change.pressed) {
                                             change.consume()
                                             if (viewModel.isObstacleMode) {
-                                                val cellSize =
-                                                    size.width.toFloat() / MapConstants.GRID_WIDTH
+                                                val cellSize = size.width.toFloat() / MapConstants.GRID_WIDTH
                                                 val mapX = (change.position.x - offset.x) / scale
                                                 val mapY = (change.position.y - offset.y) / scale
                                                 val gridX = (mapX / cellSize).toInt()
@@ -163,17 +164,30 @@ fun TsuMapScreen(
                                         lastPosition = change.position
 
                                         if (!change.pressed && isTap) {
-                                            val cellSize =
-                                                size.width.toFloat() / MapConstants.GRID_WIDTH
+                                            val cellSize = size.width.toFloat() / MapConstants.GRID_WIDTH
                                             val mapX = (down.position.x - offset.x) / scale
                                             val mapY = (down.position.y - offset.y) / scale
                                             val gridX = (mapX / cellSize).toInt()
                                                 .coerceIn(0, MapConstants.GRID_WIDTH - 1)
                                             val gridY = (mapY / cellSize).toInt()
                                                 .coerceIn(0, MapConstants.GRID_HEIGHT - 1)
-                                            viewModel.onPlaceTap(gridX, gridY)
-                                            if (viewModel.selectedPlace == null) {
-                                                viewModel.onMapClick(Point.of(gridX, gridY))
+
+                                            if (viewModel.isAntsMode) {
+                                                if (viewModel.isAntsPickingStart) {
+                                                    viewModel.antsSetStart(Point.of(gridX, gridY))
+                                                } else {
+                                                    viewModel.onPlaceTap(gridX, gridY)
+                                                    val tapped = viewModel.selectedPlace
+                                                    if (tapped != null) {
+                                                        viewModel.antsTogglePlace(tapped)
+                                                        viewModel.clearSelectedPlace()
+                                                    }
+                                                }
+                                            } else {
+                                                viewModel.onPlaceTap(gridX, gridY)
+                                                if (viewModel.selectedPlace == null) {
+                                                    viewModel.onMapClick(Point.of(gridX, gridY))
+                                                }
                                             }
                                         }
                                     }
@@ -201,19 +215,12 @@ fun TsuMapScreen(
                 val cellSize = size.width / MapConstants.GRID_WIDTH
 
                 startPoint?.let {
-                    drawCircle(
-                        Color.Green,
-                        radius = 10f,
-                        center = Offset(it.x * cellSize, it.y * cellSize)
-                    )
+                    drawCircle(Color.Green, radius = 10f, center = Offset(it.x * cellSize, it.y * cellSize))
                 }
                 endPoint?.let {
-                    drawCircle(
-                        Color.Red,
-                        radius = 10f,
-                        center = Offset(it.x * cellSize, it.y * cellSize)
-                    )
+                    drawCircle(Color.Red, radius = 10f, center = Offset(it.x * cellSize, it.y * cellSize))
                 }
+
                 viewModel.closedNodes.forEach { pt ->
                     drawRect(
                         color = Color(0x44FF0000),
@@ -221,7 +228,6 @@ fun TsuMapScreen(
                         size = Size(cellSize, cellSize)
                     )
                 }
-
                 viewModel.openNodes.forEach { pt ->
                     drawRect(
                         color = Color(0x66FFFF00),
@@ -229,7 +235,6 @@ fun TsuMapScreen(
                         size = Size(cellSize, cellSize)
                     )
                 }
-
                 viewModel.customObstacles.forEach { pt ->
                     drawRect(
                         color = Color.Black,
@@ -284,7 +289,6 @@ fun TsuMapScreen(
                         Color(0xFFFF9800), Color(0xFFBCAAA4), Color(0xFFA5D6A7), Color(0xFFE91E63),
                         Color(0xFFB0BEC5)
                     )
-
                     viewModel.clusteredPlaces.forEach { cp ->
                         val (gridX, gridY) = MapConstants.latLonToGrid(cp.place.lat, cp.place.lon)
                         val cx = gridX * cellSize
@@ -302,6 +306,100 @@ fun TsuMapScreen(
                         drawCircle(Color.Cyan, radius = 3f, center = Offset(cx, cy))
                     }
                 }
+
+
+                if (viewModel.isAntsMode) {
+                    val antsPathColor = Color(0xFF7E57C2)
+                    val antsSelectedColor = Color(0xFFFF6F00)
+                    val antsStartColor = Color(0xFFD81B60)
+
+                    val route = viewModel.antsRoute
+                    val hasAStarPath = viewModel.antsPath.isNotEmpty()
+
+                    if (hasAStarPath) {
+                        viewModel.antsPath.forEach { pt ->
+                            drawRect(
+                                color = antsPathColor,
+                                topLeft = Offset(pt.x * cellSize, pt.y * cellSize),
+                                size = Size(cellSize, cellSize)
+                            )
+                        }
+                    }
+
+
+                    if (!hasAStarPath && route.isNotEmpty()) {
+                        val linePaint = android.graphics.Paint().apply {
+                            color = android.graphics.Color.argb(200, 171, 71, 188)
+                            strokeWidth = 4f * cellSize
+                            isAntiAlias = true
+                            style = android.graphics.Paint.Style.STROKE
+                        }
+                        drawIntoCanvas { canvas ->
+                            val path = android.graphics.Path()
+                            viewModel.antsStartPoint?.let { sp ->
+                                path.moveTo(sp.x * cellSize, sp.y * cellSize)
+                            }
+                            route.forEach { place ->
+                                val (gx, gy) = MapConstants.latLonToGrid(place.lat, place.lon)
+                                if (path.isEmpty) path.moveTo(gx * cellSize, gy * cellSize)
+                                else path.lineTo(gx * cellSize, gy * cellSize)
+                            }
+                            viewModel.antsStartPoint?.let { sp ->
+                                path.lineTo(sp.x * cellSize, sp.y * cellSize)
+                            }
+                            canvas.nativeCanvas.drawPath(path, linePaint)
+                        }
+                    }
+
+
+                    viewModel.antsSelectedPlaces.forEach { place ->
+                        val (gx, gy) = MapConstants.latLonToGrid(place.lat, place.lon)
+                        drawCircle(
+                            color = antsSelectedColor,
+                            radius = 9f,
+                            center = Offset(gx * cellSize, gy * cellSize),
+                            style = Stroke(width = 3f)
+                        )
+                    }
+
+
+                    if (route.isNotEmpty()) {
+                        val bgColor = if (!hasAStarPath)
+                            android.graphics.Color.argb(210, 106, 27, 154)
+                        else
+                            android.graphics.Color.argb(230, 21, 101, 192)
+
+                        val textPaint = android.graphics.Paint().apply {
+                            color = android.graphics.Color.WHITE
+                            textSize = 22f
+                            isAntiAlias = true
+                            textAlign = android.graphics.Paint.Align.CENTER
+                            typeface = android.graphics.Typeface.DEFAULT_BOLD
+                        }
+                        val bgPaint = android.graphics.Paint().apply {
+                            color = bgColor
+                            isAntiAlias = true
+                        }
+                        route.forEachIndexed { index, place ->
+                            val (gx, gy) = MapConstants.latLonToGrid(place.lat, place.lon)
+                            val cx = gx * cellSize
+                            val cy = gy * cellSize - 14f
+                            drawIntoCanvas { canvas ->
+                                canvas.nativeCanvas.drawCircle(cx, cy, 13f, bgPaint)
+                                val textY = cy - (textPaint.descent() + textPaint.ascent()) / 2
+                                canvas.nativeCanvas.drawText("${index + 1}", cx, textY, textPaint)
+                            }
+                        }
+                    }
+
+
+                    viewModel.antsStartPoint?.let {
+                        val cx = it.x * cellSize
+                        val cy = it.y * cellSize
+                        drawCircle(Color.White, radius = 9f, center = Offset(cx, cy))
+                        drawCircle(antsStartColor, radius = 6f, center = Offset(cx, cy))
+                    }
+                }
             }
         }
 
@@ -316,17 +414,13 @@ fun TsuMapScreen(
                 FilledIconButton(onClick = { viewModel.decreaseSpeed() }) {
                     Text("-", style = MaterialTheme.typography.titleLarge)
                 }
-
                 Spacer(modifier = Modifier.width(16.dp))
-
                 Text(
                     text = "Speed: ${viewModel.currentIterSkip}",
                     color = Color.Black,
                     style = MaterialTheme.typography.titleMedium
                 )
-
                 Spacer(modifier = Modifier.width(16.dp))
-
                 FilledIconButton(onClick = { viewModel.increaseSpeed() }) {
                     Text("+", style = MaterialTheme.typography.titleLarge)
                 }
