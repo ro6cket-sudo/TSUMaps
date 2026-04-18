@@ -330,6 +330,15 @@ fun BottomSheetContent(
             modifier = Modifier.fillMaxWidth(),
             onClick = { onModeSelected(if (selectedMode == SheetMode.DECISION_TREE) null else SheetMode.DECISION_TREE) }
         )
+        ActionButton(
+            text = "Муравьи",
+            containerColor = if (selectedMode == SheetMode.ANTS) Color(0xFF4CAF50) else TsuBlue,
+            contentColor = Color.White,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                onModeSelected(if (selectedMode == SheetMode.ANTS) null else SheetMode.ANTS)
+            }
+        )
 
         AnimatedVisibility(
             visible = selectedMode == SheetMode.PATHFINDING,
