@@ -84,11 +84,17 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     var isClusteringActive by mutableStateOf(false)
         private set
 
-    fun clearToast() { toastMessage = null }
+    fun clearToast() {
+        toastMessage = null
+    }
 
-    init { loadMapData() }
+    init {
+        loadMapData()
+    }
 
-    fun clearSelectedPlace() { selectedPlace = null }
+    fun clearSelectedPlace() {
+        selectedPlace = null
+    }
 
     private fun loadMapData() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -96,25 +102,26 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                 val booleanGrid = BooleanArray(MapConstants.GRID_WIDTH * MapConstants.GRID_HEIGHT)
                 var index = 0
 
-                getApplication<Application>().assets.open("map_array.json").bufferedReader().use { reader ->
-                    var ch = reader.read()
-                    while (ch != -1 && ch.toChar() != '[') ch = reader.read()
+                getApplication<Application>().assets.open("map_array.json").bufferedReader()
+                    .use { reader ->
+                        var ch = reader.read()
+                        while (ch != -1 && ch.toChar() != '[') ch = reader.read()
 
-                    var value: Int
-                    ch = reader.read()
-                    while (ch != -1 && index < booleanGrid.size) {
-                        val c = ch.toChar()
-                        value = (c - '0')
-                        if (c.isDigit()) {
-                            if (value == 0) {
-                                booleanGrid[index++] = true
-                            } else {
-                                booleanGrid[index++] = false
-                            }
-                        }
+                        var value: Int
                         ch = reader.read()
+                        while (ch != -1 && index < booleanGrid.size) {
+                            val c = ch.toChar()
+                            value = (c - '0')
+                            if (c.isDigit()) {
+                                if (value == 0) {
+                                    booleanGrid[index++] = true
+                                } else {
+                                    booleanGrid[index++] = false
+                                }
+                            }
+                            ch = reader.read()
+                        }
                     }
-                }
                 mapGrid = booleanGrid
                 pathFinder.setBaseMap(booleanGrid)
                 pathDistanceMetric.initialize(booleanGrid)
@@ -180,7 +187,8 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         if (!isSelectionMode) return
 
         if (point.x !in 0 until MapConstants.GRID_WIDTH ||
-            point.y !in 0 until MapConstants.GRID_HEIGHT) return
+            point.y !in 0 until MapConstants.GRID_HEIGHT
+        ) return
 
         val nearestRoad = findNearestRoad(point.x, point.y, 5, grid)
 
@@ -258,7 +266,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                     val index = ny * MapConstants.GRID_WIDTH + nx
                     if (grid[index]) {
                         val dist = sqrt((dx * dx + dy * dy).toDouble())
-                        if (dist < minDistance) { minDistance = dist; bestPoint = Point.of(nx, ny) }
+                        if (dist < minDistance) {
+                            minDistance = dist; bestPoint = Point.of(nx, ny)
+                        }
                     }
                 }
             }
@@ -282,6 +292,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                         openNodes.remove(event.point)
                         closedNodes.add(event.point)
                     }
+
                     is PathfindingEvent.PathFound -> event.path?.let { finalPath.addAll(it) }
                 }
             }
@@ -352,8 +363,13 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     var clusterCount by mutableIntStateOf(5)
         private set
 
-    fun incrementClusterCount() { clusterCount = (clusterCount + 1).coerceAtMost(10) }
-    fun decrementClusterCount() { clusterCount = (clusterCount - 1).coerceAtLeast(2) }
+    fun incrementClusterCount() {
+        clusterCount = (clusterCount + 1).coerceAtMost(10)
+    }
+
+    fun decrementClusterCount() {
+        clusterCount = (clusterCount - 1).coerceAtLeast(2)
+    }
 
     var currentIterSkip by mutableIntStateOf(5)
         private set
@@ -424,9 +440,17 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     var selectedSelection by mutableStateOf(SelectionType.TOURNAMENT)
         private set
 
-    fun setMutation(type: MutationType) { selectedMutation = type }
-    fun setCrossover(type: CrossoverType) { selectedCrossover = type }
-    fun setSelection(type: SelectionType) { selectedSelection = type }
+    fun setMutation(type: MutationType) {
+        selectedMutation = type
+    }
+
+    fun setCrossover(type: CrossoverType) {
+        selectedCrossover = type
+    }
+
+    fun setSelection(type: SelectionType) {
+        selectedSelection = type
+    }
 
     fun runGenetic() {
         val start = geneticStartPoint ?: run {
@@ -491,6 +515,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                             geneticCost = event.totalCost
                             computeGeneticPathSegments(start, event.finalRoute)
                         }
+
                         is GeneticEvent.NoSolutionFound -> {
                             toastMessage = "Маршрут не найден: нет подходящих открытых мест"
                         }
@@ -562,12 +587,16 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         isObstacleMode = false
     }
 
-    fun antsCancelPickingStart() { isAntsPickingStart = false }
+    fun antsCancelPickingStart() {
+        isAntsPickingStart = false
+    }
 
     fun antsSetStart(point: Point) {
         val grid = mapGrid ?: return
         val snapped = findNearestRoad(point.x, point.y, 10, grid)
-        if (snapped == null) { toastMessage = "Здесь нет прохода для старта"; return }
+        if (snapped == null) {
+            toastMessage = "Здесь нет прохода для старта"; return
+        }
         antsStartPoint = snapped
         isAntsPickingStart = false
         antsRoute = emptyList()
@@ -613,9 +642,12 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                 mapGrid != null
 
     fun antsRun() {
-        val start = antsStartPoint ?: run { toastMessage = "Сначала выберите стартовую точку"; return }
+        val start =
+            antsStartPoint ?: run { toastMessage = "Сначала выберите стартовую точку"; return }
         val places = antsSelectedPlaces.toList()
-        if (places.size < 2) { toastMessage = "Выберите хотя бы 2 достопримечательности"; return }
+        if (places.size < 2) {
+            toastMessage = "Выберите хотя бы 2 достопримечательности"; return
+        }
         val grid = mapGrid ?: return
 
         antsJob?.cancel()
@@ -644,10 +676,12 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                         bestRoute = event.route
                         withContext(Dispatchers.Main) { antsRoute = event.route }
                     }
+
                     is AntEvent.OptimizationFinished -> bestRoute = event.finalRoute
                     AntEvent.NoSolutionFound -> withContext(Dispatchers.Main) {
                         toastMessage = "Муравьиный алгоритм не нашёл маршрут"
                     }
+
                     is AntEvent.IterationRoute -> Unit
                 }
             }
@@ -665,9 +699,12 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun antsRunAnimated() {
-        val start = antsStartPoint ?: run { toastMessage = "Сначала выберите стартовую точку"; return }
+        val start =
+            antsStartPoint ?: run { toastMessage = "Сначала выберите стартовую точку"; return }
         val places = antsSelectedPlaces.toList()
-        if (places.size < 2) { toastMessage = "Выберите хотя бы 2 достопримечательности"; return }
+        if (places.size < 2) {
+            toastMessage = "Выберите хотя бы 2 достопримечательности"; return
+        }
         val grid = mapGrid ?: return
 
         antsJob?.cancel()
@@ -701,6 +738,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                     is AntEvent.IterationRoute -> withContext(Dispatchers.Main) {
                         antsRoute = event.route
                     }
+
                     is AntEvent.NewBestRoute -> bestRoute = event.route
                     is AntEvent.OptimizationFinished -> bestRoute = event.finalRoute
                     AntEvent.NoSolutionFound -> withContext(Dispatchers.Main) {

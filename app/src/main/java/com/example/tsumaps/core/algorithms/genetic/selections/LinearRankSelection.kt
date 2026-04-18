@@ -20,6 +20,6 @@ class LinearRankSelection : Selection {
             pick -= (n - k)
             if (pick < 0) return population[sorted[k]]
         }
-        return population[sorted[n-1]]
+        return population[sorted[n - 1]]
     }
 }

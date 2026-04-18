@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 
 interface GeneticOptimizer {
-    fun findOptimalRoute (
+    fun findOptimalRoute(
         places: List<Place>,
         order: Set<FoodItem>,
         currentTime: Int,

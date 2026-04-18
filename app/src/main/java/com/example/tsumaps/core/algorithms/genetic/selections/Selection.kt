@@ -8,5 +8,5 @@ interface Selection {
         tournamentSize: Int,
         fitness: IntArray,
         rng: Random
-    ) : IntArray
+    ): IntArray
 }

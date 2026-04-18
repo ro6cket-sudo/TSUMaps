@@ -7,7 +7,9 @@ class InversionMutation : Mutation {
         var i = rng.nextInt(chromosome.size)
         var j = rng.nextInt(chromosome.size)
 
-        if (i > j) { val tmp = i; i = j; j = tmp }
+        if (i > j) {
+            val tmp = i; i = j; j = tmp
+        }
 
         while (i < j) {
             val tmp = chromosome[i]

@@ -21,13 +21,13 @@ object Clustering {
         }
 
         val shuffled = points.indices.shuffled(Random(42))
-        val centroids = Array(actualK) {i -> points[shuffled[i]].copyOf()}
+        val centroids = Array(actualK) { i -> points[shuffled[i]].copyOf() }
         val assignments = IntArray(points.size)
 
         repeat(maxIterations) {
             var changed = false
             for (i in points.indices) {
-                val nearest = findNearest(points[i],centroids)
+                val nearest = findNearest(points[i], centroids)
                 if (assignments[i] != nearest) {
                     assignments[i] = nearest
                     changed = true
@@ -37,7 +37,7 @@ object Clustering {
             if (!changed) return buildResult(places, assignments)
 
             for (c in 0 until actualK) {
-                var sumX= 0.0
+                var sumX = 0.0
                 var sumY = 0.0
                 var count = 0
                 for (i in points.indices) {
@@ -53,7 +53,7 @@ object Clustering {
                 }
             }
         }
-        return buildResult(places,assignments)
+        return buildResult(places, assignments)
     }
 
     private fun findNearest(point: DoubleArray, centroids: Array<DoubleArray>): Int {

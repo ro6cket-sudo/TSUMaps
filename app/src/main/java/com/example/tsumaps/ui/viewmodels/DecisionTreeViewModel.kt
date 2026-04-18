@@ -20,7 +20,7 @@ class DecisionTreeViewModel : ViewModel() {
     var predictionResult by mutableStateOf<Pair<String, List<String>>?>(null)
     var errorMassage by mutableStateOf<String?>(null)
 
-    fun buildingTree(){
+    fun buildingTree() {
         try {
             errorMassage = null
             predictionResult = null
@@ -32,13 +32,13 @@ class DecisionTreeViewModel : ViewModel() {
             if (isOptimized) decisionTree.optimize()
             tree = decisionTree
             availableFeatures = decisionTree.featureNames
-        }catch (error: Exception){
+        } catch (error: Exception) {
             errorMassage = "Ошибка парсинга или построения: ${error.toString()}"
             tree = null
         }
     }
 
-    fun makePrediction(){
+    fun makePrediction() {
         predictionResult = tree?.predict(userSelections)
     }
 }

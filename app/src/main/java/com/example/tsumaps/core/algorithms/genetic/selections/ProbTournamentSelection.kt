@@ -2,7 +2,7 @@ package com.example.tsumaps.core.algorithms.genetic.selections
 
 import kotlin.random.Random
 
-class ProbTournamentSelection (
+class ProbTournamentSelection(
     private val winProb: Float = 0.75f
 ) : Selection {
     override fun select(

@@ -17,7 +17,9 @@ class OrderCrossover : Crossover {
         var start = rng.nextInt(size)
         var end = rng.nextInt(size)
 
-        if (start > end) { val temp = start; start = end; end = temp }
+        if (start > end) {
+            val temp = start; start = end; end = temp
+        }
         if (start == end) end = min(size, end + 1)
 
         for (i in start until end) {

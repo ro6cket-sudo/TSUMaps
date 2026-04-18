@@ -183,7 +183,7 @@ class Genetic(
         distanceMatrix: Array<IntArray>,
         startDistance: IntArray,
         rng: Random
-    ): Array<IntArray> = Array(size) {idx ->
+    ): Array<IntArray> = Array(size) { idx ->
         if (idx == 0) greedyChromosome(n, menuMasks, requiredMask, distanceMatrix, startDistance)
         else IntArray(n) { it }.also { arr -> arr.shuffle(rng) }
     }
@@ -191,10 +191,10 @@ class Genetic(
     private fun buildRelevantMatrix(
         fullMatrix: Array<IntArray>,
         indices: List<Int>
-    ) : Array<IntArray> {
+    ): Array<IntArray> {
         val size = indices.size
         return Array(size) { i ->
-            IntArray(size) { j -> fullMatrix[indices[i]][indices[j]]}
+            IntArray(size) { j -> fullMatrix[indices[i]][indices[j]] }
         }
     }
 
@@ -204,7 +204,7 @@ class Genetic(
         requiredMask: Int,
         distanceMatrix: Array<IntArray>,
         startDistances: IntArray
-    ) : IntArray {
+    ): IntArray {
         val chromosome = IntArray(n)
         val visited = BooleanArray(n)
         var coveredMask = 0
@@ -215,7 +215,7 @@ class Genetic(
         for (candidate in 0 until n) {
             val addNew = menuMasks[candidate] and requiredMask
             val dist = if (addNew != 0) startDistances[candidate]
-                        else startDistances[candidate] + 100000
+            else startDistances[candidate] + 100000
 
             if (dist < firstBestDist) {
                 firstBestDist = dist
@@ -273,7 +273,7 @@ class Genetic(
         distanceMatrix: Array<IntArray>,
         startDistance: IntArray,
         startTime: Int
-    ) : Int {
+    ): Int {
         var totalCost = 0
         var coveredMask = 0
         var timeNow = startTime.toFloat()
@@ -295,7 +295,7 @@ class Genetic(
             if (!places[idx].isOpen(timeNowInt)) {
                 totalCost += 100000
             } else {
-                val minutesLeft = places[idx].minutesUntilClose ( timeNowInt)
+                val minutesLeft = places[idx].minutesUntilClose(timeNowInt)
                 if (minutesLeft < 30) {
                     totalCost -= 300
                 }
@@ -318,8 +318,8 @@ class Genetic(
         places: List<Place>,
         menuMasks: IntArray,
         requiredMask: Int
-    ) : List<Place> {
-        val result = ArrayList<Place> (chromosome.size)
+    ): List<Place> {
+        val result = ArrayList<Place>(chromosome.size)
         var coveredMask = 0
 
         for (idx in chromosome) {
