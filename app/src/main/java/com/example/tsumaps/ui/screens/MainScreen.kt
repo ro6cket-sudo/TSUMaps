@@ -57,10 +57,12 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import com.example.tsumaps.R
 import com.example.tsumaps.TsuMapScreen
 import com.example.tsumaps.core.DigitRecognizer.DigitNeuralNetwork
 import com.example.tsumaps.core.FoodItem
@@ -77,7 +79,7 @@ import com.example.tsumaps.core.algorithms.genetic.SelectionType
 import com.example.tsumaps.ui.theme.TsuBlue
 import com.example.tsumaps.ui.viewmodels.MapViewModel
 
-enum class SheetMode { PATHFINDING, CLUSTERING, ANTS, GENETIC,DECISION_TREE}
+enum class SheetMode { PATHFINDING, CLUSTERING, ANTS, GENETIC, DECISION_TREE }
 
 val clusterColors = listOf(
     Color.Red, Color.Yellow, Color.Green,
@@ -97,7 +99,8 @@ fun MainScreen(
 
     androidx.compose.runtime.LaunchedEffect(viewModel.toastMessage) {
         viewModel.toastMessage?.let { message ->
-            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT)
+                .show()
             viewModel.clearToast()
         }
     }
@@ -300,7 +303,7 @@ fun BottomSheetContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             ActionButton(
-                text = "A* Маршрут",
+                text = stringResource(id = R.string.menu_astar),
                 containerColor = if (selectedMode == SheetMode.PATHFINDING) Color(0xFF4CAF50) else TsuBlue,
                 contentColor = Color.White,
                 modifier = Modifier.weight(1f),
@@ -309,14 +312,14 @@ fun BottomSheetContent(
                 }
             )
             ActionButton(
-                text = "Кластеры",
+                text = stringResource(id = R.string.menu_clustering),
                 containerColor = if (selectedMode == SheetMode.CLUSTERING) Color(0xFF4CAF50) else TsuBlue,
                 contentColor = Color.White,
                 modifier = Modifier.weight(1f),
                 onClick = { onModeSelected(if (selectedMode == SheetMode.CLUSTERING) null else SheetMode.CLUSTERING) }
             )
             ActionButton(
-                text = "Генетика",
+                text = stringResource(id = R.string.menu_genetic),
                 containerColor = if (selectedMode == SheetMode.GENETIC) Color(0xFF4CAF50) else TsuBlue,
                 contentColor = Color.White,
                 modifier = Modifier.weight(1f),
@@ -324,14 +327,14 @@ fun BottomSheetContent(
             )
         }
         ActionButton(
-            text = "Дерево решений",
+            text = stringResource(id = R.string.menu_decision_tree),
             containerColor = if (selectedMode == SheetMode.DECISION_TREE) Color(0xFF4CAF50) else TsuBlue,
             contentColor = Color.White,
             modifier = Modifier.fillMaxWidth(),
             onClick = { onModeSelected(if (selectedMode == SheetMode.DECISION_TREE) null else SheetMode.DECISION_TREE) }
         )
         ActionButton(
-            text = "Муравьи",
+            text = stringResource(id = R.string.menu_ant),
             containerColor = if (selectedMode == SheetMode.ANTS) Color(0xFF4CAF50) else TsuBlue,
             contentColor = Color.White,
             modifier = Modifier.fillMaxWidth(),
@@ -516,7 +519,9 @@ fun BottomSheetContent(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (selected) Color(0xFF1565C0) else Color(0xFFE0E0E0),
+                                containerColor = if (selected) Color(0xFF1565C0) else Color(
+                                    0xFFE0E0E0
+                                ),
                                 contentColor = if (selected) Color.White else Color.Black
                             )
                         ) {
@@ -795,7 +800,9 @@ private fun AntsPanel(
                         notReady -> hintText.ifEmpty { "Запустить" }
                         else -> "Запустить"
                     },
-                    containerColor = if (canRun && !isRunning) Color(0xFF2E7D32) else Color(0xFFB0BEC5),
+                    containerColor = if (canRun && !isRunning) Color(0xFF2E7D32) else Color(
+                        0xFFB0BEC5
+                    ),
                     contentColor = Color.White,
                     modifier = Modifier.weight(1f),
                     onClick = { if (canRun && !isRunning) onRunClick() }
@@ -807,7 +814,9 @@ private fun AntsPanel(
                         notReady -> hintText.ifEmpty { "Анимировать" }
                         else -> "Анимировать"
                     },
-                    containerColor = if (canRun && !isRunning) Color(0xFF6A1B9A) else Color(0xFFB0BEC5),
+                    containerColor = if (canRun && !isRunning) Color(0xFF6A1B9A) else Color(
+                        0xFFB0BEC5
+                    ),
                     contentColor = Color.White,
                     modifier = Modifier.weight(1f),
                     onClick = { if (canRun && !isRunning) onRunAnimatedClick() }
@@ -955,9 +964,11 @@ fun PlaceInfoCard(
                     modifier = Modifier.padding(top = 2.dp)
                 ) {
                     Box(
-                        modifier = Modifier.size(8.dp).background(
-                            clusterColors[clusterIndex % clusterColors.size], CircleShape
-                        )
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(
+                                clusterColors[clusterIndex % clusterColors.size], CircleShape
+                            )
                     )
                     Text(
                         "Кластер ${clusterIndex + 1} · $metricName",
@@ -1000,7 +1011,13 @@ fun PlaceInfoCard(
                                         if (offset.x > 1f && offset.y > 1f) {
                                             lastX = offset.x
                                             lastY = offset.y
-                                            DrawOnGrid(offset.x, offset.y, gridSize, grid, size.width)
+                                            DrawOnGrid(
+                                                offset.x,
+                                                offset.y,
+                                                gridSize,
+                                                grid,
+                                                size.width
+                                            )
                                         }
                                     },
                                     onDrag = { change, _ ->
@@ -1008,7 +1025,15 @@ fun PlaceInfoCard(
                                         val y = change.position.y
                                         change.consume()
                                         if (x > 1f && y > 1f && lastX != -1f) {
-                                            addDrawOnGrid(lastX, x, lastY, y, gridSize, grid, size.width)
+                                            addDrawOnGrid(
+                                                lastX,
+                                                x,
+                                                lastY,
+                                                y,
+                                                gridSize,
+                                                grid,
+                                                size.width
+                                            )
                                             lastX = x
                                             lastY = y
                                         }
@@ -1025,8 +1050,18 @@ fun PlaceInfoCard(
                             val cellSize = size.width / gridSize
                             for (i in 0 until gridSize) {
                                 val p = i * cellSize
-                                drawLine(Color(0xFFF1F2F6), Offset(p, 0f), Offset(p, size.height), 1f)
-                                drawLine(Color(0xFFF1F2F6), Offset(0f, p), Offset(size.width, p), 1f)
+                                drawLine(
+                                    Color(0xFFF1F2F6),
+                                    Offset(p, 0f),
+                                    Offset(p, size.height),
+                                    1f
+                                )
+                                drawLine(
+                                    Color(0xFFF1F2F6),
+                                    Offset(0f, p),
+                                    Offset(size.width, p),
+                                    1f
+                                )
                             }
                             for (i in 0 until gridSize) {
                                 for (j in 0 until gridSize) {
@@ -1055,7 +1090,12 @@ fun PlaceInfoCard(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("ИИ:", fontSize = 10.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "ИИ:",
+                                    fontSize = 10.sp,
+                                    color = Color.Gray,
+                                    fontWeight = FontWeight.Bold
+                                )
                                 Text(
                                     text = score?.toString() ?: "?",
                                     fontSize = 28.sp,
@@ -1072,7 +1112,9 @@ fun PlaceInfoCard(
                             onClick = {
                                 score = null
                                 for (x in 0 until gridSize) {
-                                    for (y in 0 until gridSize) { grid[x][y] = 0 }
+                                    for (y in 0 until gridSize) {
+                                        grid[x][y] = 0
+                                    }
                                 }
                             }
                         )
@@ -1100,7 +1142,9 @@ fun PlaceInfoCard(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth(),
+                                    modifier = Modifier
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        .fillMaxWidth(),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
@@ -1134,11 +1178,21 @@ fun ClusterLegend(metricName: String, clusterCount: Int, modifier: Modifier = Mo
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             Text(metricName, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             for (i in 0 until clusterCount) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Box(modifier = Modifier.size(10.dp).background(clusterColors[i % clusterColors.size], CircleShape))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(clusterColors[i % clusterColors.size], CircleShape)
+                    )
                     Text("Кластер ${i + 1}", fontSize = 11.sp, color = Color.DarkGray)
                 }
             }
