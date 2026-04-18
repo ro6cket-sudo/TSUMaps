@@ -12,9 +12,13 @@ import com.example.tsumaps.core.FoodItem
 import com.example.tsumaps.core.MapConstants
 import com.example.tsumaps.core.Place
 import com.example.tsumaps.core.PlaceStorage
+import com.example.tsumaps.core.PlaceType
 import com.example.tsumaps.core.Point
 import com.example.tsumaps.core.algorithms.astar.AStarFinder
 import com.example.tsumaps.core.algorithms.astar.PathfindingEvent
+import com.example.tsumaps.core.algorithms.ants.AntColony
+import com.example.tsumaps.core.algorithms.ants.AntEvent
+import com.example.tsumaps.core.algorithms.ants.AntsDistanceMatrix
 import com.example.tsumaps.core.algorithms.cluster.ClusterMetricType
 import com.example.tsumaps.core.algorithms.cluster.ClusteredPlace
 import com.example.tsumaps.core.algorithms.cluster.EuclideanMetric
@@ -38,6 +42,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.util.Calendar
 import kotlin.math.sqrt
 
@@ -79,17 +84,11 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     var isClusteringActive by mutableStateOf(false)
         private set
 
-    fun clearToast() {
-        toastMessage = null
-    }
+    fun clearToast() { toastMessage = null }
 
-    init {
-        loadMapData()
-    }
+    init { loadMapData() }
 
-    fun clearSelectedPlace() {
-        selectedPlace = null
-    }
+    fun clearSelectedPlace() { selectedPlace = null }
 
     private fun loadMapData() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -160,9 +159,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                         ny in 0 until MapConstants.GRID_HEIGHT
                     ) {
                         val newPoint = Point.of(nx, ny)
-                        if (!customObstacles.contains(newPoint)) {
-                            customObstacles.add(newPoint)
-                        }
+                        if (!customObstacles.contains(newPoint)) customObstacles.add(newPoint)
                     }
                 }
             }
@@ -183,10 +180,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         if (!isSelectionMode) return
 
         if (point.x !in 0 until MapConstants.GRID_WIDTH ||
-            point.y !in 0 until MapConstants.GRID_HEIGHT
-        ) {
-            return
-        }
+            point.y !in 0 until MapConstants.GRID_HEIGHT) return
 
         val nearestRoad = findNearestRoad(point.x, point.y, 5, grid)
 
@@ -254,10 +248,8 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun findNearestRoad(startX: Int, startY: Int, radius: Int, grid: BooleanArray): Point? {
         if (grid[startY * MapConstants.GRID_WIDTH + startX]) return Point.of(startX, startY)
-
         var bestPoint: Point? = null
         var minDistance = Double.MAX_VALUE
-
         for (dx in -radius..radius) {
             for (dy in -radius..radius) {
                 val nx = startX + dx
@@ -266,10 +258,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                     val index = ny * MapConstants.GRID_WIDTH + nx
                     if (grid[index]) {
                         val dist = sqrt((dx * dx + dy * dy).toDouble())
-                        if (dist < minDistance) {
-                            minDistance = dist
-                            bestPoint = Point.of(nx, ny)
-                        }
+                        if (dist < minDistance) { minDistance = dist; bestPoint = Point.of(nx, ny) }
                     }
                 }
             }
@@ -279,7 +268,6 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     fun startAnimatedPath(start: Point, end: Point) {
         pathfindingJob?.cancel()
-
         openNodes.clear()
         closedNodes.clear()
         finalPath.clear()
@@ -331,7 +319,13 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         val tapRadius = 10
         var bestPlace: Place? = null
         var bestDist = Double.MAX_VALUE
-        for (place in PlaceStorage.places) {
+
+        val searchList = if (isAntsMode)
+            PlaceStorage.places.filter { it.type == PlaceType.LANDMARK }
+        else
+            PlaceStorage.places
+
+        for (place in searchList) {
             val (px, py) = MapConstants.latLonToGrid(place.lat, place.lon)
             val dX = (gridX - px).toDouble()
             val dY = (gridY - py).toDouble()
@@ -358,15 +352,10 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     var clusterCount by mutableIntStateOf(5)
         private set
 
-    fun incrementClusterCount() {
-        clusterCount = (clusterCount + 1).coerceAtMost(10)
-    }
+    fun incrementClusterCount() { clusterCount = (clusterCount + 1).coerceAtMost(10) }
+    fun decrementClusterCount() { clusterCount = (clusterCount - 1).coerceAtLeast(2) }
 
-    fun decrementClusterCount() {
-        clusterCount = (clusterCount - 1).coerceAtLeast(2)
-    }
-
-    var currentIterSkip by mutableIntStateOf(10)
+    var currentIterSkip by mutableIntStateOf(5)
         private set
 
     fun decreaseSpeed() {
@@ -527,5 +516,245 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
         geneticPathSegments.clear()
         geneticPathSegments.addAll(segments)
+    }
+
+    val landmarkPlaces: List<Place>
+        get() = PlaceStorage.places.filter { it.type == PlaceType.LANDMARK }
+
+    var isAntsMode by mutableStateOf(false)
+        private set
+
+    var isAntsPickingStart by mutableStateOf(false)
+        private set
+
+    var antsStartPoint by mutableStateOf<Point?>(null)
+        private set
+
+    val antsSelectedPlaces = mutableStateListOf<Place>()
+
+    var antsIsRunning by mutableStateOf(false)
+        private set
+
+    var antsIsAnimating by mutableStateOf(false)
+        private set
+
+    var antsRoute by mutableStateOf<List<Place>>(emptyList())
+        private set
+
+    var antsPath by mutableStateOf<List<Point>>(emptyList())
+        private set
+
+    var antsTotalDistanceMeters by mutableIntStateOf(0)
+        private set
+
+    private val metersPerCell = 2
+    private var antsJob: Job? = null
+
+    fun toggleAntsMode() {
+        isAntsMode = !isAntsMode
+        if (!isAntsMode) isAntsPickingStart = false
+    }
+
+    fun antsStartPickingStart() {
+        if (!isAntsMode) return
+        isAntsPickingStart = true
+        isSelectionMode = false
+        isObstacleMode = false
+    }
+
+    fun antsCancelPickingStart() { isAntsPickingStart = false }
+
+    fun antsSetStart(point: Point) {
+        val grid = mapGrid ?: return
+        val snapped = findNearestRoad(point.x, point.y, 10, grid)
+        if (snapped == null) { toastMessage = "Здесь нет прохода для старта"; return }
+        antsStartPoint = snapped
+        isAntsPickingStart = false
+        antsRoute = emptyList()
+        antsPath = emptyList()
+        antsTotalDistanceMeters = 0
+    }
+
+    fun antsTogglePlace(place: Place) {
+        val existing = antsSelectedPlaces.indexOfFirst { it.id == place.id }
+        if (existing >= 0) antsSelectedPlaces.removeAt(existing)
+        else antsSelectedPlaces.add(place)
+        antsRoute = emptyList()
+        antsPath = emptyList()
+        antsTotalDistanceMeters = 0
+    }
+
+    fun antsIsPlaceSelected(place: Place): Boolean =
+        antsSelectedPlaces.any { it.id == place.id }
+
+    fun antsClearSelection() {
+        antsSelectedPlaces.clear()
+        antsRoute = emptyList()
+        antsPath = emptyList()
+        antsTotalDistanceMeters = 0
+    }
+
+    fun antsClearAll() {
+        antsJob?.cancel()
+        antsSelectedPlaces.clear()
+        antsStartPoint = null
+        antsRoute = emptyList()
+        antsPath = emptyList()
+        antsTotalDistanceMeters = 0
+        isAntsPickingStart = false
+        antsIsRunning = false
+        antsIsAnimating = false
+    }
+
+    val antsCanRun: Boolean
+        get() = !antsIsRunning &&
+                antsStartPoint != null &&
+                antsSelectedPlaces.size >= 2 &&
+                mapGrid != null
+
+    fun antsRun() {
+        val start = antsStartPoint ?: run { toastMessage = "Сначала выберите стартовую точку"; return }
+        val places = antsSelectedPlaces.toList()
+        if (places.size < 2) { toastMessage = "Выберите хотя бы 2 достопримечательности"; return }
+        val grid = mapGrid ?: return
+
+        antsJob?.cancel()
+        antsJob = viewModelScope.launch(Dispatchers.Default) {
+            withContext(Dispatchers.Main) {
+                antsIsRunning = true
+                antsRoute = emptyList()
+                antsPath = emptyList()
+                antsTotalDistanceMeters = 0
+            }
+
+            val placePoints = places.map { placeGridPoint(it, grid) }
+            val obstacles = customObstacles.toList()
+            val matrixCalc = AntsDistanceMatrix(
+                pathFinderFactory = {
+                    AStarFinder().apply { setBaseMap(grid); setObstacles(obstacles) }
+                }
+            )
+            val (matrix, startDistances) = matrixCalc.calculate(placePoints, start)
+
+            val colony = AntColony()
+            var bestRoute: List<Place> = emptyList()
+            colony.findOptimalRoute(places, matrix, startDistances).collect { event ->
+                when (event) {
+                    is AntEvent.NewBestRoute -> {
+                        bestRoute = event.route
+                        withContext(Dispatchers.Main) { antsRoute = event.route }
+                    }
+                    is AntEvent.OptimizationFinished -> bestRoute = event.finalRoute
+                    AntEvent.NoSolutionFound -> withContext(Dispatchers.Main) {
+                        toastMessage = "Муравьиный алгоритм не нашёл маршрут"
+                    }
+                    is AntEvent.IterationRoute -> Unit
+                }
+            }
+
+            val fullPath = buildAntsFullPath(start, bestRoute, placePoints, places, grid, obstacles)
+            val meters = fullPath.size * metersPerCell
+
+            withContext(Dispatchers.Main) {
+                antsRoute = bestRoute
+                antsPath = fullPath
+                antsTotalDistanceMeters = meters
+                antsIsRunning = false
+            }
+        }
+    }
+
+    fun antsRunAnimated() {
+        val start = antsStartPoint ?: run { toastMessage = "Сначала выберите стартовую точку"; return }
+        val places = antsSelectedPlaces.toList()
+        if (places.size < 2) { toastMessage = "Выберите хотя бы 2 достопримечательности"; return }
+        val grid = mapGrid ?: return
+
+        antsJob?.cancel()
+        antsJob = viewModelScope.launch(Dispatchers.Default) {
+            withContext(Dispatchers.Main) {
+                antsIsRunning = true
+                antsIsAnimating = true
+                antsRoute = emptyList()
+                antsPath = emptyList()
+                antsTotalDistanceMeters = 0
+            }
+
+            val placePoints = places.map { placeGridPoint(it, grid) }
+            val obstacles = customObstacles.toList()
+            val matrixCalc = AntsDistanceMatrix(
+                pathFinderFactory = {
+                    AStarFinder().apply { setBaseMap(grid); setObstacles(obstacles) }
+                }
+            )
+            val (matrix, startDistances) = matrixCalc.calculate(placePoints, start)
+
+            val colony = AntColony(
+                beta = 2.0,
+                emitEveryIteration = true,
+                iterationDelayMs = 180L
+            )
+
+            var bestRoute: List<Place> = emptyList()
+            colony.findOptimalRoute(places, matrix, startDistances).collect { event ->
+                when (event) {
+                    is AntEvent.IterationRoute -> withContext(Dispatchers.Main) {
+                        antsRoute = event.route
+                    }
+                    is AntEvent.NewBestRoute -> bestRoute = event.route
+                    is AntEvent.OptimizationFinished -> bestRoute = event.finalRoute
+                    AntEvent.NoSolutionFound -> withContext(Dispatchers.Main) {
+                        toastMessage = "Муравьиный алгоритм не нашёл маршрут"
+                    }
+                }
+            }
+
+            val fullPath = buildAntsFullPath(start, bestRoute, placePoints, places, grid, obstacles)
+            val meters = fullPath.size * metersPerCell
+
+            withContext(Dispatchers.Main) {
+                antsRoute = bestRoute
+                antsPath = fullPath
+                antsTotalDistanceMeters = meters
+                antsIsRunning = false
+                antsIsAnimating = false
+            }
+        }
+    }
+
+    private fun placeGridPoint(place: Place, grid: BooleanArray): Point {
+        val (x, y) = MapConstants.latLonToGrid(place.lat, place.lon)
+        return findNearestRoad(x, y, 10, grid) ?: Point.of(x, y)
+    }
+
+    private suspend fun buildAntsFullPath(
+        start: Point,
+        route: List<Place>,
+        allPlacePoints: List<Point>,
+        allPlaces: List<Place>,
+        grid: BooleanArray,
+        obstacles: List<Point>
+    ): List<Point> = withContext(Dispatchers.Default) {
+        if (route.isEmpty()) return@withContext emptyList()
+
+        val finder = AStarFinder().apply { setBaseMap(grid); setObstacles(obstacles) }
+        val idToPoint = HashMap<Int, Point>(allPlaces.size)
+        for (i in allPlaces.indices) idToPoint[allPlaces[i].id] = allPlacePoints[i]
+
+        val result = ArrayList<Point>()
+        var prev = start
+
+        for (place in route) {
+            val target = idToPoint[place.id] ?: continue
+            val segment = finder.findPath(prev, target) ?: continue
+            if (result.isEmpty()) result.addAll(segment)
+            else for (k in 1 until segment.size) result.add(segment[k])
+            prev = target
+        }
+        val backSegment = finder.findPath(prev, start)
+        if (backSegment != null)
+            for (k in 1 until backSegment.size) result.add(backSegment[k])
+
+        result
     }
 }
