@@ -3,8 +3,11 @@ package com.example.tsumaps.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,19 +44,29 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.example.tsumaps.TsuMapScreen
+import com.example.tsumaps.core.DigitRecognizer.DigitNeuralNetwork
 import com.example.tsumaps.core.FoodItem
+import com.example.tsumaps.ui.screens.decisionTreeScreen.DecisionTreeScreen
+import com.example.tsumaps.ui.screens.scoreScreec.Draw as DrawOnGrid
+import com.example.tsumaps.ui.screens.scoreScreec.addDraw as addDrawOnGrid
 import com.example.tsumaps.core.Place
 import com.example.tsumaps.core.PlaceType
 import com.example.tsumaps.core.Point
@@ -64,7 +77,7 @@ import com.example.tsumaps.core.algorithms.genetic.SelectionType
 import com.example.tsumaps.ui.theme.TsuBlue
 import com.example.tsumaps.ui.viewmodels.MapViewModel
 
-enum class SheetMode { PATHFINDING, CLUSTERING, ANTS, GENETIC }
+enum class SheetMode { PATHFINDING, CLUSTERING, ANTS, GENETIC,DECISION_TREE}
 
 val clusterColors = listOf(
     Color.Red, Color.Yellow, Color.Green,
@@ -80,11 +93,11 @@ fun MainScreen(
     val sheetState = rememberBottomSheetScaffoldState()
     val context = androidx.compose.ui.platform.LocalContext.current
     var selectedMode by remember { mutableStateOf<SheetMode?>(null) }
+    val savedNeuralResults = remember { androidx.compose.runtime.mutableStateMapOf<Int, Int>() }
 
     androidx.compose.runtime.LaunchedEffect(viewModel.toastMessage) {
         viewModel.toastMessage?.let { message ->
-            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT)
-                .show()
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
             viewModel.clearToast()
         }
     }
@@ -186,10 +199,37 @@ fun MainScreen(
                     clusterIndex = viewModel.clusteredPlaces.find { it.place.id == place.id }?.clusterIndex,
                     metricName = if (viewModel.isClusteringActive) viewModel.selectedMetric.label else null,
                     onDismiss = { viewModel.clearSelectedPlace() },
+                    savedNeuralResult = savedNeuralResults[place.id],
+                    onSaveNeuralResult = { savedNeuralResults[place.id] = it },
+                    onClearNeuralResult = { savedNeuralResults.remove(place.id) },
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 48.dp, start = 16.dp, end = 16.dp)
                 )
+            }
+        }
+    }
+
+    AnimatedVisibility(
+        visible = selectedMode == SheetMode.DECISION_TREE,
+        enter = expandVertically(),
+        exit = shrinkVertically()
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            DecisionTreeScreen()
+            Button(
+                onClick = { selectedMode = null },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = 40.dp, start = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = TsuBlue)
+            ) {
+                Text("← Назад", color = Color.White)
             }
         }
     }
@@ -282,16 +322,23 @@ fun BottomSheetContent(
                 modifier = Modifier.weight(1f),
                 onClick = { onModeSelected(if (selectedMode == SheetMode.GENETIC) null else SheetMode.GENETIC) }
             )
-            ActionButton(
-                text = "Муравьи",
-                containerColor = if (selectedMode == SheetMode.ANTS) Color(0xFF4CAF50) else TsuBlue,
-                contentColor = Color.White,
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    onModeSelected(if (selectedMode == SheetMode.ANTS) null else SheetMode.ANTS)
-                }
-            )
         }
+        ActionButton(
+            text = "Дерево решений",
+            containerColor = if (selectedMode == SheetMode.DECISION_TREE) Color(0xFF4CAF50) else TsuBlue,
+            contentColor = Color.White,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { onModeSelected(if (selectedMode == SheetMode.DECISION_TREE) null else SheetMode.DECISION_TREE) }
+        )
+        ActionButton(
+            text = "Муравьи",
+            containerColor = if (selectedMode == SheetMode.ANTS) Color(0xFF4CAF50) else TsuBlue,
+            contentColor = Color.White,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                onModeSelected(if (selectedMode == SheetMode.ANTS) null else SheetMode.ANTS)
+            }
+        )
 
         AnimatedVisibility(
             visible = selectedMode == SheetMode.PATHFINDING,
@@ -469,9 +516,7 @@ fun BottomSheetContent(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (selected) Color(0xFF1565C0) else Color(
-                                    0xFFE0E0E0
-                                ),
+                                containerColor = if (selected) Color(0xFF1565C0) else Color(0xFFE0E0E0),
                                 contentColor = if (selected) Color.White else Color.Black
                             )
                         ) {
@@ -750,9 +795,7 @@ private fun AntsPanel(
                         notReady -> hintText.ifEmpty { "Запустить" }
                         else -> "Запустить"
                     },
-                    containerColor = if (canRun && !isRunning) Color(0xFF2E7D32) else Color(
-                        0xFFB0BEC5
-                    ),
+                    containerColor = if (canRun && !isRunning) Color(0xFF2E7D32) else Color(0xFFB0BEC5),
                     contentColor = Color.White,
                     modifier = Modifier.weight(1f),
                     onClick = { if (canRun && !isRunning) onRunClick() }
@@ -764,9 +807,7 @@ private fun AntsPanel(
                         notReady -> hintText.ifEmpty { "Анимировать" }
                         else -> "Анимировать"
                     },
-                    containerColor = if (canRun && !isRunning) Color(0xFF6A1B9A) else Color(
-                        0xFFB0BEC5
-                    ),
+                    containerColor = if (canRun && !isRunning) Color(0xFF6A1B9A) else Color(0xFFB0BEC5),
                     contentColor = Color.White,
                     modifier = Modifier.weight(1f),
                     onClick = { if (canRun && !isRunning) onRunAnimatedClick() }
@@ -839,22 +880,38 @@ fun PlaceInfoCard(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     clusterIndex: Int? = null,
-    metricName: String? = null
+    metricName: String? = null,
+    savedNeuralResult: Int? = null,
+    onSaveNeuralResult: (Int) -> Unit = {},
+    onClearNeuralResult: () -> Unit = {}
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val gridSize = 50
+    val digitRecognizer = remember { DigitNeuralNetwork(context) }
+    val grid = remember {
+        mutableStateListOf<MutableList<Int>>().apply {
+            repeat(gridSize) { add(mutableStateListOf<Int>().apply { repeat(gridSize) { add(0) } }) }
+        }
+    }
+    var showNeuralNet by remember { mutableStateOf(false) }
+    var lastX by remember { mutableStateOf(-1f) }
+    var lastY by remember { mutableStateOf(-1f) }
+    var score by remember { mutableStateOf<Int?>(null) }
+
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(10.dp, 8.dp)) {
             if (clusterIndex != null) {
                 Box(
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(10.dp)
                         .background(clusterColors[clusterIndex % clusterColors.size], CircleShape)
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(2.dp))
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -863,12 +920,13 @@ fun PlaceInfoCard(
             ) {
                 Text(
                     text = place.name,
-                    fontSize = 18.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = Color.Black,
+                    modifier = Modifier.weight(1f)
                 )
-                TextButton(onClick = onDismiss) {
-                    Text("x", color = Color.Black, fontWeight = FontWeight.Bold)
+                TextButton(onClick = onDismiss, contentPadding = PaddingValues(4.dp)) {
+                    Text("✕", color = Color.Gray, fontSize = 13.sp)
                 }
             }
             Text(text = place.description, fontSize = 14.sp, color = Color.DarkGray)
@@ -891,22 +949,177 @@ fun PlaceInfoCard(
                 color = Color.Gray
             )
             if (clusterIndex != null && metricName != null) {
-                Spacer(Modifier.height(6.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(top = 2.dp)
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .background(
-                                clusterColors[clusterIndex % clusterColors.size], CircleShape
-                            )
+                        modifier = Modifier.size(8.dp).background(
+                            clusterColors[clusterIndex % clusterColors.size], CircleShape
+                        )
                     )
                     Text(
                         "Кластер ${clusterIndex + 1} · $metricName",
-                        fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Medium
+                        fontSize = 11.sp, color = Color.Gray
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+            ActionButton(
+                text = if (showNeuralNet) "Скрыть нейросеть" else "Нейросеть",
+                containerColor = if (showNeuralNet) Color(0xFF4CAF50) else TsuBlue,
+                contentColor = Color.White,
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { showNeuralNet = !showNeuralNet }
+            )
+
+            AnimatedVisibility(visible = showNeuralNet) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(top = 6.dp)
+                ) {
+                    Text(
+                        text = "Нарисуйте цифру:",
+                        fontSize = 12.sp,
+                        color = Color.DarkGray,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(180.dp)
+                            .shadow(4.dp, RoundedCornerShape(10.dp))
+                            .background(Color.White, RoundedCornerShape(10.dp))
+                            .border(1.dp, Color(0xFFDFE6E9), RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(10.dp))
+                            .pointerInput(Unit) {
+                                detectDragGestures(
+                                    onDragStart = { offset ->
+                                        if (offset.x > 1f && offset.y > 1f) {
+                                            lastX = offset.x
+                                            lastY = offset.y
+                                            DrawOnGrid(offset.x, offset.y, gridSize, grid, size.width)
+                                        }
+                                    },
+                                    onDrag = { change, _ ->
+                                        val x = change.position.x
+                                        val y = change.position.y
+                                        change.consume()
+                                        if (x > 1f && y > 1f && lastX != -1f) {
+                                            addDrawOnGrid(lastX, x, lastY, y, gridSize, grid, size.width)
+                                            lastX = x
+                                            lastY = y
+                                        }
+                                    },
+                                    onDragEnd = {
+                                        lastX = -1f
+                                        lastY = -1f
+                                        score = digitRecognizer.claccify(grid)
+                                    }
+                                )
+                            }
+                    ) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val cellSize = size.width / gridSize
+                            for (i in 0 until gridSize) {
+                                val p = i * cellSize
+                                drawLine(Color(0xFFF1F2F6), Offset(p, 0f), Offset(p, size.height), 1f)
+                                drawLine(Color(0xFFF1F2F6), Offset(0f, p), Offset(size.width, p), 1f)
+                            }
+                            for (i in 0 until gridSize) {
+                                for (j in 0 until gridSize) {
+                                    if (grid[i][j] == 1) {
+                                        drawRect(
+                                            color = TsuBlue,
+                                            topLeft = Offset(i * cellSize, j * cellSize),
+                                            size = Size(cellSize + 0.5f, cellSize + 0.5f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.width(180.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F4FF)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("ИИ:", fontSize = 10.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = score?.toString() ?: "?",
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = TsuBlue
+                                )
+                            }
+                        }
+                        ActionButton(
+                            text = "Сброс",
+                            containerColor = Color(0xFFF44336),
+                            contentColor = Color.White,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                score = null
+                                for (x in 0 until gridSize) {
+                                    for (y in 0 until gridSize) { grid[x][y] = 0 }
+                                }
+                            }
+                        )
+                    }
+
+                    if (score != null && savedNeuralResult == null) {
+                        ActionButton(
+                            text = "Сохранить результат ($score)",
+                            containerColor = Color(0xFF4CAF50),
+                            contentColor = Color.White,
+                            modifier = Modifier.width(180.dp),
+                            onClick = { score?.let { onSaveNeuralResult(it) } }
+                        )
+                    }
+
+                    if (savedNeuralResult != null) {
+                        Row(
+                            modifier = Modifier.width(180.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = TsuBlue),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = savedNeuralResult.toString(),
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                            ActionButton(
+                                text = "Удалить",
+                                containerColor = Color(0xFFF44336),
+                                contentColor = Color.White,
+                                modifier = Modifier.weight(2f),
+                                onClick = onClearNeuralResult
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -921,21 +1134,11 @@ fun ClusterLegend(metricName: String, clusterCount: Int, modifier: Modifier = Mo
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
+        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(metricName, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
             for (i in 0 until clusterCount) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .background(clusterColors[i % clusterColors.size], CircleShape)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(modifier = Modifier.size(10.dp).background(clusterColors[i % clusterColors.size], CircleShape))
                     Text("Кластер ${i + 1}", fontSize = 11.sp, color = Color.DarkGray)
                 }
             }
