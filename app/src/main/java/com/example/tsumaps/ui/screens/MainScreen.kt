@@ -939,27 +939,6 @@ fun PlaceInfoCard(
                 fontSize = 13.sp,
                 color = Color.Gray
             )
-            Text(text = place.description, fontSize = 12.sp, color = Color.DarkGray)
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = when (place.type) {
-                        PlaceType.FOOD -> "Кафе / Ресторан"
-                        PlaceType.FOOD_SHOP -> "Магазин продуктов"
-                        PlaceType.UNIVERSITY_BUILDING -> "Корпус"
-                    },
-                    fontSize = 11.sp,
-                    color = TsuBlue,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "${place.openTime}–${place.closeTime}",
-                    fontSize = 11.sp,
-                    color = Color.Gray
-                )
-            }
             if (clusterIndex != null && metricName != null) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
